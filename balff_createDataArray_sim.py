@@ -84,12 +84,12 @@ def simulate_schechter_distribution(alpha, L_star, L_min, N):
     return values
 #-------------------------------------------------------------------------------------------------------------
 if args.verbose:
-    print ' '
-    print ':: '+sys.argv[0]+' :: -- START OF PROGRAM -- '
-    print ' '
+    print(' ')
+    print(':: '+sys.argv[0]+' :: -- START OF PROGRAM -- ')
+    print(' ')
 #-------------------------------------------------------------------------------------------------------------
 # Drawing full sample of objects
-if args.verbose: print ' - Start drawing full sample from distribution'
+if args.verbose: print(' - Start drawing full sample from distribution')
 if args.probdist == 'gamma': 
     Ldraw_total    = np.random.gamma(args.kval,args.Lstar,args.Ntotal)
 elif args.probdist == 'schechter': 
@@ -101,7 +101,7 @@ else:
     sys.exit(args.probdist+' is not a valid probability distribution to draw from --> ABORTING')
 #-------------------------------------------------------------------------------------------------------------
 # add measurement errors
-if args.verbose: print ' - Adding measurement errors to drawn sample'
+if args.verbose: print(' - Adding measurement errors to drawn sample')
 Msun            = [5.61,5.48,4.83,4.42,4.08,3.64,3.32,3.28] # (rest-frame) abs Mag_sun in U,B,V,R,I,J,H,K (www.ucolick.org/~cnaw/sun.html)
 Lsun            = 3.839e-11 # 1e44 erg/
 measurementerr  = 0.2 # approximate 1sigma measurement error in J
@@ -111,7 +111,7 @@ Ldraw_toterr   = Ldraw_total+Lerr # adding measurement error
 Lerrabs        = np.abs(Lerr)
 #-------------------------------------------------------------------------------------------------------------
 # Select objects above detection limit
-if args.verbose: print ' - Applying detection threshold to sample'
+if args.verbose: print(' - Applying detection threshold to sample')
 MJlim      = -2.5*np.log10(args.Llim/Lsun)+Msun[1]+ 47.14 # apparent mag (47.14 term incl k-correction & reddening)
 Llimcheck = 10**( (Msun[1]+47.14-MJlim)/2.5 ) * Lsun
 Llimerr   = args.Llim * np.log(10)/2.5*0.2 # uncertainty on detection limit
@@ -122,10 +122,10 @@ Nobj       = len(Ldraw) # Counting number of objects above detection limit
 if args.nochoice:
     ncstring = '_nochoice'
 else: # ask if the results should be saved
-    input = raw_input(" - Selected a final sample of Nobj = "+str(Nobj)+
+    input = input(" - Selected a final sample of Nobj = "+str(Nobj)+
                       " \n   Should I write that sample to disk? (y/n): ")
     if (input == 'y') or (input == 'yes'):
-        print "   Okay, good, then I'll continue\n"
+        print("   Okay, good, then I'll continue\n")
     elif (input == 'n') or (input == 'no'):
         sys.exit("   Not satisfied?... okay then I'll abort\n")
     else:
@@ -161,11 +161,11 @@ if plotsamples == 1:
     plt.ylabel('\#')
     leg = plt.legend(fancybox=True, loc='upper right',numpoints=1)
     leg.get_frame().set_alpha(0.6)
-    if args.verbose: print ' - Writing sample plot to ',plotname
+    if args.verbose: print(' - Writing sample plot to ',plotname)
     plt.savefig(plotname)
 #-------------------------------------------------------------------------------------------------------------
 # Defining/creating data lists
-if args.verbose: print ' - Creating dictionary with simulated data '
+if args.verbose: print(' - Creating dictionary with simulated data ')
 Nfields   = 1
 fieldsize = Nobj/(Nfields+0.0)
 number    = 0 # resetting numbering
@@ -176,7 +176,7 @@ field     = []
 for ii in range(Nobj):
     if ii/fieldsize == round(ii/fieldsize):
         number = number+1
-        if args.verbose: print ' - Writing data for field number ',number
+        if args.verbose: print(' - Writing data for field number ',number)
     OBJname.append('Obj'+format(ii+1, "05d")+'_FIELD'+str(number))
     field.append('FIELD'+str(number))
 
@@ -189,9 +189,9 @@ dLlim    = [Llimerr for N in range(Nobj)]
 bcd.write_fitsfile(OBJname,field,L,dL,Llim,dLlim,1,outputname=outputfile,verbose=True)
 #-------------------------------------------------------------------------------------------------------------
 if args.verbose:
-    print ' '
-    print ':: '+sys.argv[0]+' :: -- END OF PROGRAM -- '
-    print ' '
+    print(' ')
+    print(':: '+sys.argv[0]+' :: -- END OF PROGRAM -- ')
+    print(' ')
 #-------------------------------------------------------------------------------------------------------------
 
 

@@ -93,21 +93,21 @@ def createlookuptable(datafile,allfields=True,kval=[-3.0,6.0,10], Lstarval=[1.0e
 
     """
     if verbose:
-        print ' --- SET-UP: ---'
-        print ' - datafile     : ',datafile
-        print ' - kval         : ',kval[0:2]
-        print ' - L*val        : ',Lstarval[0:2]
-        print ' - errdist      : ',errdist
-        print ' - table size   : ',kval[2],'x',Lstarval[2]
+        print(' --- SET-UP: ---')
+        print(' - datafile     : ',datafile)
+        print(' - kval         : ',kval[0:2])
+        print(' - L*val        : ',Lstarval[0:2])
+        print(' - errdist      : ',errdist)
+        print(' - table size   : ',kval[2],'x',Lstarval[2])
         if parallelize:
-            print ' - parallelize  :  True\n'
+            print(' - parallelize  :  True\n')
         else:
-            print ' - parallelize  :  False\n'
+            print(' - parallelize  :  False\n')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Getting field information
     # NB! intSelintFtilde which is in the look-up tables is independent of the
     # contamination fraction hence contamfrac = 0.0 has no effect on the lookup table
-    if verbose: print ' - Initializing mpdclass '
+    if verbose: print(' - Initializing mpdclass ')
     mpdclass  = mpd.balff_mpd(datafile,verbose=1,loadselfct=loadselfct,
                                 errdist=errdist,sigsamp=sigmasample, contamfrac=0.0)
 
@@ -122,12 +122,12 @@ def createlookuptable(datafile,allfields=True,kval=[-3.0,6.0,10], Lstarval=[1.0e
         fieldname = np.unique(np.sort(fields))
         fieldlim  = []
         fielderr  = []
-        for ii in xrange(len(fieldname)):
+        for ii in range(len(fieldname)):
             fieldlim.append(mpdclass.data['LFIELDLIM'][np.where(fields == fieldname[ii])[0][0]])
             fielderr.append(mpdclass.data['LFIELDLIMERR'][np.where(fields == fieldname[ii])[0][0]])
 
     Nfields   = len(fieldname)
-    if verbose: print ' - Found '+str(Nfields)+' fields to create look-up tables for'
+    if verbose: print(' - Found '+str(Nfields)+' fields to create look-up tables for')
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Creating vectors of dimensions of look-up table
     Nk           = int(kval[2])
@@ -141,7 +141,7 @@ def createlookuptable(datafile,allfields=True,kval=[-3.0,6.0,10], Lstarval=[1.0e
     dict['kdim']     = kvalall
     dict['Lstardim'] = Lstarall
 
-    for ii in xrange(Nfields):
+    for ii in range(Nfields):
         arg    = fieldname[ii]+'lim'
         dict[arg] = fieldlim[ii]
         arg    = fieldname[ii]+'err'
@@ -150,12 +150,12 @@ def createlookuptable(datafile,allfields=True,kval=[-3.0,6.0,10], Lstarval=[1.0e
     # Creating vectors of dimensions of look-up table
     Nentries  = Nk*NLstar
 
-    if verbose: print '\n   --- CREATING LOOK-UP TABLES ---'
-    if verbose: print ' - Each look-up table will contain '+str(Nentries)+\
-                      ' - entries and have shape '+str(np.zeros([Nk,NLstar]).shape)
+    if verbose: print('\n   --- CREATING LOOK-UP TABLES ---')
+    if verbose: print(' - Each look-up table will contain '+str(Nentries)+\
+                      ' - entries and have shape '+str(np.zeros([Nk,NLstar]).shape))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print '   --- START @ '+strftime("%a, %d %b %Y %H:%M:%S", localtime())+' ---\n'
+    if verbose: print('   --- START @ '+strftime("%a, %d %b %Y %H:%M:%S", localtime())+' ---\n')
     if parallelize:
         dict      = run_parallel(dict,mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,
                                  kvalall,Lstarall,selfctval,errdist=errdist,verbose=verbose,dummyval=dummyval)
@@ -164,15 +164,15 @@ def createlookuptable(datafile,allfields=True,kval=[-3.0,6.0,10], Lstarval=[1.0e
         dict      = run_standard(dict,mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,
                                  kvalall,Lstarall,selfctval,errdist=errdist,verbose=verbose,dummyval=dummyval)
         runstring = 'standardrun'
-    if verbose: print '   --- DONE @ '+strftime("%a, %d %b %Y %H:%M:%S", localtime())+' ---\n'
+    if verbose: print('   --- DONE @ '+strftime("%a, %d %b %Y %H:%M:%S", localtime())+' ---\n')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if verbose: print ' - Saving look-up table dictionary to binary'
+    if verbose: print(' - Saving look-up table dictionary to binary')
     outfile = datafile.replace('.fits','_lookuptable_'+str(Nk)+'x'+str(NLstar)+'tab_'+runstring+'.npz')
     if allfields: outfile = outfile.replace('.npz','_allfields.npz')
     if dummyval:  outfile = outfile.replace('.npz','_dummyval.npz')
     np.savez(outfile,**dict) # save array as binary file
-    if verbose: print ' - Saved output dictionary with the '+str(Nfields)+' look-up tables to \n   '+outfile
+    if verbose: print(' - Saved output dictionary with the '+str(Nfields)+' look-up tables to \n   '+outfile)
 
     return outfile
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -181,7 +181,7 @@ def singlefield(mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,kvalall,Lstarall,
     """
     Calculate the look-up table for a single field
     """
-    if verbose: print '\nInitiating table for '+fieldname+' on '+strftime("%a, %d %b %Y %H:%M:%S", localtime())
+    if verbose: print('\nInitiating table for '+fieldname+' on '+strftime("%a, %d %b %Y %H:%M:%S", localtime()))
     fieldtable = np.zeros([Nk,NLstar])
     count      = 0.0 # resetting counter
     dL         = fielderr
@@ -192,8 +192,8 @@ def singlefield(mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,kvalall,Lstarall,
     if errdist == 'magbias':
         mpdclass.setmagbiasval(fieldname,verbose=True)
 
-    for kk in xrange(Nk):
-        for ll in xrange(NLstar):
+    for kk in range(Nk):
+        for ll in range(NLstar):
             count     = count + 1.0
             if dummyval:
                 intvalue  = np.abs(kvalall[kk]) # dummy values for quick run used when testing
@@ -201,13 +201,13 @@ def singlefield(mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,kvalall,Lstarall,
                 intvalue  = mpdclass.intSelintFtilde(kvalall[kk],Lstarall[ll],dL,Llim,
                                                      selfct=selfctval,field=fieldname,Npoints=100)
                 if intvalue < 0:
-                    print '--- WARNING...ERROR balff_createLookupTable.singlefield():', \
-                          fieldname, ' intvalue < 0 - it should not be possible! ---'
+                    print('--- WARNING...ERROR balff_createLookupTable.singlefield():', \
+                          fieldname, ' intvalue < 0 - it should not be possible! ---')
                     pdb.set_trace()
 
             fieldtable[kk,ll] = intvalue
             if verbose and (count/printstep == round(count/printstep)):
-                print ' - wrote value '+str(count)+' to table'
+                print(' - wrote value '+str(count)+' to table')
 
     return fieldtable
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -218,7 +218,7 @@ def run_standard(dict,mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,kvalall,Lst
 
     """
     Nfields = len(fieldname)
-    for ff in xrange(Nfields):
+    for ff in range(Nfields):
         fieldtable = singlefield(mpdclass,fieldname[ff],fielderr[ff],fieldlim[ff],Nk,NLstar,kvalall,Lstarall,
                                  selfctval,dummyval=dummyval,verbose=verbose,errdist=errdist)
 
@@ -242,7 +242,7 @@ def run_parallel(dict,mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,kvalall,Lst
         return_dict[fieldname+'lookup'] = fieldtable
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    if verbose: print ' ---- Starting multiprocess run of field look-up tables: ---- '
+    if verbose: print(' ---- Starting multiprocess run of field look-up tables: ---- ')
     tstart  = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     Nfields = len(fieldname)
 
@@ -250,7 +250,7 @@ def run_parallel(dict,mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,kvalall,Lst
     return_dict = mngr.dict()        # define Manager dictionar to store output from Worker function in
     jobs = []
 
-    for ff in xrange(Nfields):
+    for ff in range(Nfields):
         job = multiprocessing.Process(target=worker,
                                       args=(mpdclass,fieldname[ff],fielderr[ff],fieldlim[ff],Nk,NLstar,
                                             kvalall,Lstarall,selfctval,dummyval,return_dict),name=fieldname[ff])
@@ -265,20 +265,20 @@ def run_parallel(dict,mpdclass,fieldname,fielderr,fieldlim,Nk,NLstar,kvalall,Lst
     tend = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if verbose:
-        print '\n ---- The parallel_run finished running the jobs for all fields ----'
-        print '      Start        : '+tstart
-        print '      End          : '+tend
-        print '      Exitcode = 0 : job produced no error '
-        print '      Exitcode > 0 : job had an error, and exited with that code (signal.SIGTERM)'
-        print '      exitcode < 0 : job was killed with a signal of -1 * exitcode (signal.SIGTERM)'
+        print('\n ---- The parallel_run finished running the jobs for all fields ----')
+        print('      Start        : '+tstart)
+        print('      End          : '+tend)
+        print('      Exitcode = 0 : job produced no error ')
+        print('      Exitcode > 0 : job had an error, and exited with that code (signal.SIGTERM)')
+        print('      exitcode < 0 : job was killed with a signal of -1 * exitcode (signal.SIGTERM)')
 
         for job in jobs:
-            print ' - The job running field ',job.name,' exited with exitcode: ',job.exitcode
+            print(' - The job running field ',job.name,' exited with exitcode: ',job.exitcode)
 
 
-    if verbose: print ' - Adding output from parallelized run to dictionary'
+    if verbose: print(' - Adding output from parallelized run to dictionary')
 
-    for key in return_dict.keys():
+    for key in list(return_dict.keys()):
         dict[key] = return_dict[key]  # filling dictionary
 
     return dict
@@ -304,44 +304,44 @@ def compare_dictionaries(dictionarylist,verbose=True,fieldcompare=None,showplot=
     if Ndict == 1:
         sys.exit(' - Only one dictionary in list. Expected at least [dict1,dict2] ) --> Aborting')
 
-    if verbose: print ' - The following dictionaries were found:'
-    for dd in xrange(Ndict):
-        if verbose: print '   Dict'+str("%.3d" % dd)+' :  ',dictionarylist[dd]
+    if verbose: print(' - The following dictionaries were found:')
+    for dd in range(Ndict):
+        if verbose: print('   Dict'+str("%.3d" % dd)+' :  ',dictionarylist[dd])
 
     Nkvals = []
     NLvals = []
 
-    for dd in xrange(Ndict):
+    for dd in range(Ndict):
         dictstr = str("%.3d" % dd)
         dict    = np.load(dictionarylist[dd])
 
-        if verbose: print '\n ---- '+dictstr+' ---- '
-        if verbose: print ' - Nfields     :   ',(len(dict.keys())-2.)/3.
+        if verbose: print('\n ---- '+dictstr+' ---- ')
+        if verbose: print(' - Nfields     :   ',(len(list(dict.keys()))-2.)/3.)
 
-        if verbose: print ' - Fields      :   ',
-        for key in dict.keys():
+        if verbose: print(' - Fields      :   ', end=' ')
+        for key in list(dict.keys()):
             if 'lookup' in key:
-                if verbose: print key[:-6],
-        if verbose: print ''
+                if verbose: print(key[:-6], end=' ')
+        if verbose: print('')
 
         kdim, Lstardim   = dict['kdim'], dict['Lstardim']
-        if verbose: print ' - kdim        :   ',kdim
-        if verbose: print ' - Lstardim    :   ',Lstardim
+        if verbose: print(' - kdim        :   ',kdim)
+        if verbose: print(' - Lstardim    :   ',Lstardim)
         Nkvals.append(len(kdim))
         NLvals.append(len(Lstardim))
 
     if fieldcompare:
-        if verbose: print '\n ---- Comparing data for ---- ',fieldcompare
+        if verbose: print('\n ---- Comparing data for ---- ',fieldcompare)
 
-    for dd in xrange(Ndict):
+    for dd in range(Ndict):
         dictstr = str("%.3d" % dd)
         dict    = np.load(dictionarylist[dd])
 
-        if verbose: print '\n ---- '+dictstr+' ---- '
+        if verbose: print('\n ---- '+dictstr+' ---- ')
 
         lim, err, lookup = [dict[fieldcompare+arg] for arg in ['lim','err','lookup']]
-        if verbose: print ' - lim value     :   ',lim
-        if verbose: print ' - err value     :   ',err
+        if verbose: print(' - lim value     :   ',lim)
+        if verbose: print(' - err value     :   ',err)
 
 
     if (Ndict == 2) & (len(np.unique(Nkvals)) == 1) & (len(np.unique(NLvals)) == 1):
@@ -351,10 +351,10 @@ def compare_dictionaries(dictionarylist,verbose=True,fieldcompare=None,showplot=
         dict2    = np.load(dictionarylist[0])
         lookup2  = dict2[fieldcompare + 'lookup']
 
-        if verbose: print ' - The difference between the two lookup tables '
-        print '   Tab1: \n',lookup1
-        print '   Tab2: \n',lookup2
-        print '   Diff: \n',lookup1-lookup2
+        if verbose: print(' - The difference between the two lookup tables ')
+        print('   Tab1: \n',lookup1)
+        print('   Tab2: \n',lookup2)
+        print('   Diff: \n',lookup1-lookup2)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     fig  = plt.figure()
@@ -363,7 +363,7 @@ def compare_dictionaries(dictionarylist,verbose=True,fieldcompare=None,showplot=
 
     colormaps = [cm.gray,cm.winter,cm.autumn,cm.summer]
 
-    for dd in xrange(Ndict):
+    for dd in range(Ndict):
         dict = np.load(dictionarylist[dd])
 
         X = np.log10(dict['Lstardim'])
@@ -392,7 +392,7 @@ def compare_dictionaries(dictionarylist,verbose=True,fieldcompare=None,showplot=
         plt.show()
     else:
         plt.savefig(pnamesurf)
-        if verbose: print ' - Plotting look-up table surfaces to',pnamesurf
+        if verbose: print(' - Plotting look-up table surfaces to',pnamesurf)
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 

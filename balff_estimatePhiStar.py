@@ -57,7 +57,7 @@ parser.add_argument("--zrange", type=float, nargs=2, help="Redshift range to est
 parser.add_argument("-v", "--verbose", action="store_true", help="Print verbose comments")
 args = parser.parse_args()
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 # Literature values
 labelsB12   = ['Bradley et al. (2012)','Oesch et al. (2012)','Bouwens et al. (2011b)',
@@ -106,14 +106,14 @@ if args.zrange:
 else:
     zmax  = 8.5
 
-if args.verbose: print ' - Estimating comoving cosmological volume of the ideal full-sky survey for z = ['+\
-                       str(zmin)+','+str(zmax)+']'
+if args.verbose: print(' - Estimating comoving cosmological volume of the ideal full-sky survey for z = ['+\
+                       str(zmin)+','+str(zmax)+']')
 Dz        = zmax-zmin
 dVdz,Vmax = volume(zmin,zmax)
 Vol       = dVdz * Dz
 #-------------------------------------------------------------------------------------------------------------
 # Loading balff MCMC info
-if args.verbose: print ' - Loading MCMC chains and stats outputted by balff_run.py'
+if args.verbose: print(' - Loading MCMC chains and stats outputted by balff_run.py')
 mcmcdb    = pymc.database.pickle.load(args.mcmcpickle)
 kvaldraw  = mcmcdb.trace('theta')[:,0]
 logLstar  = mcmcdb.trace('theta')[:,1]
@@ -121,11 +121,11 @@ logNdraw  = mcmcdb.trace('theta')[:,2]
 
 Lstardraw = 10**logLstar
 Nmcmc     = len(kvaldraw)
-if args.verbose: print ' - Found ',Nmcmc,' MCMC draws in chains'
+if args.verbose: print(' - Found ',Nmcmc,' MCMC draws in chains')
 
 #-------------------------------------------------------------------------------------------------------------
 # Loading data array
-if args.verbose: print ' - Loading data array'
+if args.verbose: print(' - Loading data array')
 if args.lookuptable:
     lutabval  = args.lookuptable
 else:
@@ -136,7 +136,7 @@ fieldent = np.unique(mpdclass.data['FIELD'],return_index=True)
 fields   = fieldent[0]
 Nfield   = len(fields)
 LJlim    = mpdclass.data['LFIELDLIM'][fieldent[1]]
-if args.verbose: print ' - Found ',Nobj,' objects spread over ',Nfield,' fields'
+if args.verbose: print(' - Found ',Nobj,' objects spread over ',Nfield,' fields')
 #-------------------------------------------------------------------------------------------------------------
 if 'simulatedsamples' in args.mcmcpickle:
     ftot = args.contamfracsim
@@ -144,7 +144,7 @@ else:
     fborg = 0.0
     fhudf = 0.0
     fcont = np.zeros(Nobj)
-    for ii in xrange(Nobj):
+    for ii in range(Nobj):
         if mpdclass.data['FIELD'][ii][0:4] == 'borg':
             fcont[ii] = fborg
         elif mpdclass.data['FIELD'][ii][0:3] == 'UDF':
@@ -152,7 +152,7 @@ else:
         elif mpdclass.data['FIELD'][ii][0:3] == 'ERS':
             fcont[ii] = fhudf # assuming no contamination in UDF/ERS fields
         else:
-            print 'Field ',mpdclass.data['FIELD'][ii],' not recognized (assuming 0.0 contamination)'
+            print('Field ',mpdclass.data['FIELD'][ii],' not recognized (assuming 0.0 contamination)')
 
     Nborg = len(fcont[(fcont != 0.0) & (fcont < 1.0)])
     Nhudf = len(fcont[fcont == 0.0])
@@ -169,8 +169,8 @@ Nhighz = 10.0**logNdraw
 phistarest = np.zeros(Nmcmc)
 logLmin    = -4
 logLmax    = np.inf
-if args.verbose: print ' - Estimating phi* from Nhighz distribution'
-for ii in xrange(Nmcmc):
+if args.verbose: print(' - Estimating phi* from Nhighz distribution')
+for ii in range(Nmcmc):
     alpha       = kvaldraw[ii]-1.0
     Lstar       = Lstardraw[ii]
     intsch, err = scipy.integrate.quad(lambda L: schechter(L,alpha,Lstar,1.0),10**logLmin,np.inf)
@@ -183,7 +183,7 @@ for ii in xrange(Nmcmc):
 #-------------------------------------------------------------------------------------------------------------
 # Estimate Ntrue from Phi* literature values
 Ntrue = np.zeros(Nliterature)
-for ii in xrange(Nliterature):
+for ii in range(Nliterature):
     alpha       = alphaB12[ii]
     Lstar       = LstarB12[ii]
     phistar     = 10**lphistarB12[ii]
@@ -193,7 +193,7 @@ for ii in xrange(Nliterature):
 #-------------------------------------------------------------------------------------------------------------
 # Saving phi* values
 fitsname  = args.mcmcpickle.replace('.pickle','_PhiStar.fits')
-if args.verbose: print '\n - Writing k, L* and phi* values to fits table:\n   '+fitsname
+if args.verbose: print('\n - Writing k, L* and phi* values to fits table:\n   '+fitsname)
 
 col1  = pyfits.Column(name='K' , format='D', array=kvaldraw)
 col2  = pyfits.Column(name='LSTAR', format='D', array=Lstardraw)
@@ -219,10 +219,10 @@ dpsm      = medianps - psvalm
 dpsp      = psvalp - medianps
 
 if args.verbose:
-    print '\n - The obtained value of phi* is (median +/- 68% conf):'
-    print '   log(phi*)      = ',str("%.2f" % medianps),'+',str("%.2f" % dpsp),'-',str("%.2f" % dpsm)
+    print('\n - The obtained value of phi* is (median +/- 68% conf):')
+    print('   log(phi*)      = ',str("%.2f" % medianps),'+',str("%.2f" % dpsp),'-',str("%.2f" % dpsm))
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 
 

@@ -102,14 +102,14 @@ class balff_mpd:
         self.ufield = np.unique(self.fields)
         self.Nfields = len(self.ufield)
         self.Nobjfield = np.zeros(self.Nfields)
-        for ff in xrange(self.Nfields):
+        for ff in range(self.Nfields):
             objent = np.where(self.fields == self.ufield[ff])[0]
             self.Nobjfield[ff] = len(objent)
 
         # creating array to contain contamination fraction to apply
         self.contamfrac    = contamfrac
         self.contamfracarr = np.ones(self.Nobj) * self.contamfrac
-        for ff in xrange(self.Nobj): # setting HUDF contamination to 0 (already accounted for in selection function)
+        for ff in range(self.Nobj): # setting HUDF contamination to 0 (already accounted for in selection function)
             if (self.fields[ff][0:3] == 'UDF') or (self.fields[ff][0:3] == 'ERS'):
                 self.contamfracarr[ff] = 0.0
 
@@ -126,7 +126,7 @@ class balff_mpd:
             self.emptysim = True
             self.Nfields_nocand = 4
             self.aareas  = np.zeros(self.Nfields_nocand) + self.Asky/(self.Nfields+self.Nfields_nocand+0.0)
-            self.afields = np.asarray(['FIELDEMPTY'+str(ii+1) for ii in xrange(self.Nfields_nocand)])
+            self.afields = np.asarray(['FIELDEMPTY'+str(ii+1) for ii in range(self.Nfields_nocand)])
             self.ufield_nocand = self.afields
         else: # use actual empty fields
             self.emptysim = False
@@ -137,7 +137,7 @@ class balff_mpd:
 
                 # getting fields not in dataarray (i.e. fields w/o high z candidates)
                 self.ufield_nocand = []
-                for nn in xrange(len(self.finfonames)):
+                for nn in range(len(self.finfonames)):
                     if len(np.where(self.ufield == self.finfonames[nn])[0]) == 0:
                         self.ufield_nocand.append(self.finfonames[nn])
                 self.ufield_nocand  = np.asarray(self.ufield_nocand)
@@ -147,17 +147,17 @@ class balff_mpd:
 
             self.afields, self.aareas = self.loadareas() # load field areas
 
-        if self.vb: print ':: balff_mpd :: Datafile loaded               : ', datafitstable
-        if self.vb: print ':: balff_mpd :: Objects found                 : ', self.Nobj
-        if self.vb: print '                Spread over                   : ', self.Nfields, '/',(self.Nfields_nocand+self.Nfields), ' fields'
-        if self.vb and (self.lutab == None): print ':: balff_mpd :: Look-up table               :  None provided'
-        if self.vb and (self.lutab != None): print ':: balff_mpd :: Look-up table               : ', self.lutab
-        if self.vb: print ':: balff_mpd :: Selection functions to load   : *SN', self.sigsamp, '*'
-        if self.vb: print ':: balff_mpd :: Contamination fraction used   : ', contamfrac
+        if self.vb: print(':: balff_mpd :: Datafile loaded               : ', datafitstable)
+        if self.vb: print(':: balff_mpd :: Objects found                 : ', self.Nobj)
+        if self.vb: print('                Spread over                   : ', self.Nfields, '/',(self.Nfields_nocand+self.Nfields), ' fields')
+        if self.vb and (self.lutab == None): print(':: balff_mpd :: Look-up table               :  None provided')
+        if self.vb and (self.lutab != None): print(':: balff_mpd :: Look-up table               : ', self.lutab)
+        if self.vb: print(':: balff_mpd :: Selection functions to load   : *SN', self.sigsamp, '*')
+        if self.vb: print(':: balff_mpd :: Contamination fraction used   : ', contamfrac)
 
         self.loadselfct = loadselfct
         if self.loadselfct == True:
-            if self.vb: print ':: balff_mpd :: Loading tabulated selection functions as requested'
+            if self.vb: print(':: balff_mpd :: Loading tabulated selection functions as requested')
 
             borgfield = self.finfonames.tolist()
             bf        = []
@@ -167,7 +167,7 @@ class balff_mpd:
             borgfield = bf
 
             self.dictall = {}
-            for jj in xrange(len(borgfield)):
+            for jj in range(len(borgfield)):
                 selfctpath = './balff_data/selectionfunctions/'
                 selfctdict = selfctpath + 'Szm_' + borgfield[jj] + '_SN' + self.sigsamp + '.npz'
                 dictSF = np.load(selfctdict, mmap_mode='r+')
@@ -178,23 +178,23 @@ class balff_mpd:
                 dictCF = np.load(comfctdict, mmap_mode='r+')
                 self.dictall[borgfield[jj] + 'CF'] = dictCF
                 #dictCF.close()
-        if self.vb: print '\n'
+        if self.vb: print('\n')
 
 
         if self.errdist == 'magbias':
-            print ':: balff_mpd :: Loading tabulated parameters for magbias errdist with multiple gaussians'
+            print(':: balff_mpd :: Loading tabulated parameters for magbias errdist with multiple gaussians')
             mbiasfields = np.genfromtxt('./balff_data/fields_magbiaspdf.txt',usecols=0, dtype='S30')
             mbiastab    = np.genfromtxt('./balff_data/fields_magbiaspdf.txt',comments='#')[:,1:]
 
             # turn into dictionary for easy extraction
             self.magbiasdic = {}
-            for mm in xrange(len(mbiasfields)):
+            for mm in range(len(mbiasfields)):
                 self.magbiasdic[mbiasfields[mm]] = mbiastab[mm]
 
             ignoremagbias = False
             if ignoremagbias:
-                print ' - **NB** Setting all magbias dic keys to [1.0,1.0,1.0,0.0] (ignore magbias)'
-                for key in self.magbiasdic.keys():
+                print(' - **NB** Setting all magbias dic keys to [1.0,1.0,1.0,0.0] (ignore magbias)')
+                for key in list(self.magbiasdic.keys()):
                     self.magbiasdic[key] = [1.0,1.0,1.0,0.0]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -256,14 +256,14 @@ class balff_mpd:
         Nfields = len(fnames)
 
         if Nsiglim == None:
-            print " -----> NB! balff_mpd.loafinfo didn't get a Nsiglim value from self.limNsig --> Aborting"
+            print(" -----> NB! balff_mpd.loafinfo didn't get a Nsiglim value from self.limNsig --> Aborting")
             pdb.set_trace()
         elif Nsiglim != self.limNsig:
-            print " -----> NB! balff_mpd.loafinfo the Nsiglim != self.limNsig"
+            print(" -----> NB! balff_mpd.loafinfo the Nsiglim != self.limNsig")
 
         LJlim = np.zeros(Nfields)
         dLJlim = np.zeros(Nfields)
-        for ff in xrange(Nfields):
+        for ff in range(Nfields):
             FieldJent = np.where(self.fieldinfo['fieldname'] == fnames[ff])
             J5siglim = self.fieldinfo['maglim5sigma'][FieldJent]
             Avval    = self.fieldinfo['Av'][FieldJent]
@@ -307,7 +307,7 @@ class balff_mpd:
                 G1 = self.gaussfct_magbias(Lobs, Ltrue, dL, dmu1, meanmu1, nonorm=nonorm)
                 magbiasval = p1 * G1
 
-                if self.magbiasfield_dic.has_key('p2_field'):
+                if 'p2_field' in self.magbiasfield_dic:
                     p2       = self.magbiasfield_dic['p2_field']
                     meanmu2  = self.magbiasfield_dic['meanmu2']
                     dmu2     = self.magbiasfield_dic['dmu2']
@@ -315,7 +315,7 @@ class balff_mpd:
                     G2 = self.gaussfct_magbias(Lobs, Ltrue, dL, dmu2, meanmu2, nonorm=nonorm)
                     magbiasval += p2 * G2
 
-                if self.magbiasfield_dic.has_key('p3_field'):
+                if 'p3_field' in self.magbiasfield_dic:
                     p3       = self.magbiasfield_dic['p3_field']
                     meanmu3  = self.magbiasfield_dic['meanmu3']
                     dmu3     = self.magbiasfield_dic['dmu3']
@@ -384,8 +384,8 @@ class balff_mpd:
             self.magbiasfield_dic['dmu3']       = self.magbiasdic[fieldname][9]
         
         if verbose:
-            print ' - Setting the magnification bias values for ',fieldname
-            print '  ',self.magbiasfield_dic
+            print(' - Setting the magnification bias values for ',fieldname)
+            print('  ',self.magbiasfield_dic)
 
         dmu = ['dmu1','dmu2','dmu3']
         self.magbiasfield_dic['dmus'] = [self.magbiasfield_dic[i] for i in dmu if i in self.magbiasfield_dic]
@@ -497,8 +497,8 @@ class balff_mpd:
             value = self.selfctFIELD(mapp, field, zobj=zobj)
         else:
             if self.vb:
-                print ':: balff_mpd.tabselfct :: WARNING: No selection function found for field ' + field
-                print '                                   Using step selection function instead.'
+                print(':: balff_mpd.tabselfct :: WARNING: No selection function found for field ' + field)
+                print('                                   Using step selection function instead.')
             fieldent = np.unique(self.data['FIELD'], return_index=True)
             fields = fieldent[0]
             LJlim = self.data['LFIELDLIM'][fieldent[1]]
@@ -552,7 +552,7 @@ class balff_mpd:
             fig = plt.figure()
             plt.plot(bincen, selfct, 'k-', label='Selection function')
             plt.plot(Mabs, selfctvalue, 'ko', label='Value for Mabs=' + str(Mabs) + ' using ' + selUDF + ' method')
-            print 'Selection function value at Mabs =', Mabs, ' was estimated to be ', selfctvalue
+            print('Selection function value at Mabs =', Mabs, ' was estimated to be ', selfctvalue)
             plt.xlabel('M absolute')
             plt.ylabel('Selection Function')
             leg = plt.legend(fancybox=True, loc='lower left', numpoints=1)
@@ -683,8 +683,8 @@ class balff_mpd:
         Ftval = sval * errval
 
         if (Ftval < 0).any():
-            if self.vb: print ' - WARNING: There are values in Ftilde which are < 0... that is bad!'
-            if self.vb: print '            Stopping to enable an investigation'
+            if self.vb: print(' - WARNING: There are values in Ftilde which are < 0... that is bad!')
+            if self.vb: print('            Stopping to enable an investigation')
             import pylab as plt
             plt.plot(L,Ftval)
             plt.plot(L,errval)
@@ -726,11 +726,11 @@ class balff_mpd:
         result    = scipy.integrate.trapz(integrand, xvals)
 
         if integrand[0] > 1E-2:
-          print '--- WARNING: the lower value of Ftilde > 0.01 - intSelintFtilde may diverge '
+          print('--- WARNING: the lower value of Ftilde > 0.01 - intSelintFtilde may diverge ')
 
         if result < 0:
-            print '--- WARNING...ERROR balff_mpd.intFtilde result < 0 - it should not be possible! ---'
-            print result
+            print('--- WARNING...ERROR balff_mpd.intFtilde result < 0 - it should not be possible! ---')
+            print(result)
             pdb.set_trace()
 
         return result
@@ -829,7 +829,7 @@ class balff_mpd:
             xxlog   = np.linspace(np.log10(Lminval), np.log10(self.Lmax), Npoints)
             xx      = 10 ** xxlog
             yy      = np.zeros(Npoints)
-            for ii in xrange(Npoints):
+            for ii in range(Npoints):
                 yy[ii] = self.iSiFintegrand(xx[ii],field,kval,Lstar,dL,zobj=self.LFz,
                                             selUDF='interp')*xx[ii]*np.log(10)
             result = scipy.integrate.trapz(yy, xxlog) # much faster than quad integration!
@@ -844,7 +844,7 @@ class balff_mpd:
                 xx = 10 ** xxlog
                 yy1 = np.zeros(Npoints)
                 yy2 = np.zeros(Npoints)
-                for ii in xrange(Npoints):
+                for ii in range(Npoints):
                     yy1[ii] = self.iSiFintegrand(xx[ii], field, kval, Lstar, dL, zobj=self.LFz, selUDF='interp')
                     yy2[ii] = self.tabselfct(xx[ii], field, zobj=self.LFz, selUDF='interp')
 
@@ -857,7 +857,7 @@ class balff_mpd:
                 leg.get_frame().set_alpha(0.6)
                 plt.show()
             if result < 0.: 
-              print 'intval = ', result
+              print('intval = ', result)
               result = 0.
         return result
 
@@ -909,7 +909,7 @@ class balff_mpd:
 
         pnum = self.intFtilde(kval, Lstar, Lmean, Lmean/fieldmean, dL)
         if pnum < 1e-128:
-            if self.vb: print ':: balff_mpd.lnpnumerator :: Changing pnum = ', pnum, ' to pnum = 1e-128',
+            if self.vb: print(':: balff_mpd.lnpnumerator :: Changing pnum = ', pnum, ' to pnum = 1e-128', end=' ')
             pnum = 1e-128 # making sure that pnum == 0 is not passed to np.log
         return np.log(pnum)
 
@@ -937,7 +937,7 @@ class balff_mpd:
             pden = self.lookupvalue(kval, Lstar, field, self.lutab)
 
         if pden < 1e-128:
-            if self.vb: print ':: balff_mpd.lnpdenominator :: Changing pden = ', pden, ' to pden = 1e-128',
+            if self.vb: print(':: balff_mpd.lnpdenominator :: Changing pden = ', pden, ' to pden = 1e-128', end=' ')
             pden = 1e-128 # making sure that pden == 0 is not passed to np.log
         return np.log(pden)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -954,8 +954,8 @@ class balff_mpd:
         """
         nhighztotal = np.sum(highz)
         if nhighztotal != self.Nobj: # checking that all dropouts are actually used
-            print ' - Total number of dropouts after contamination applied = ',np.sum(nhighztotal)
-            print '   That is different from the number of high-z objects in datafile --> ABORTING'
+            print(' - Total number of dropouts after contamination applied = ',np.sum(nhighztotal))
+            print('   That is different from the number of high-z objects in datafile --> ABORTING')
             pdb.set_trace()
 
         kval         = param[0]
@@ -973,7 +973,7 @@ class balff_mpd:
         # ------------- C1 * C2 * (1- A/Asky * p(I=0 | Theta)^(N-n) * p(L | Theta) terms -------------
         lnp1 = 0.0
         lnp2 = 0.0
-        for ff in xrange(self.Nfields):
+        for ff in range(self.Nfields):
             objent = np.where(self.fields == self.ufield[ff])[0]
             
             field_cand = self.ufield[ff]
@@ -992,7 +992,7 @@ class balff_mpd:
 
             Afield = self.aareas[self.afields == field_cand]
             if len(Afield) == 0: # if no area was found use Asky/Nfield (for sims)
-                if field_cand[0:5] != 'FIELD': print 'NB - no area found in list for field ',field_cand
+                if field_cand[0:5] != 'FIELD': print('NB - no area found in list for field ',field_cand)
                 Afield = self.Asky/(self.Nfields)
                 if (self.emptysim == True) and (self.datafileonly == False):
                     Afield = self.Asky/(self.Nfields+self.Nfields_nocand)
@@ -1011,16 +1011,16 @@ class balff_mpd:
             detectionprob = prob / norm
 
             if detectionprob >= 0.999:
-                print '--------------------'
-                print 'Field =',field_cand     
+                print('--------------------')
+                print('Field =',field_cand)     
                          
                 if detectionprob >= 2.0: # if not just numerical errors/uncertainty to 1 break
-                    print 'ERROR in getlnprob_field_contam detectionprob > 2.0 for [k,L*,dL,Llim]=[', \
-                           kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')'
+                    print('ERROR in getlnprob_field_contam detectionprob > 2.0 for [k,L*,dL,Llim]=[', \
+                           kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')')
                     #pdb.set_trace()
 
-                print 'WARNING in getlnprob_field_contam detectionprob > 0.999 for [k,L*,dL,Llim]=[', \
-                       kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')'
+                print('WARNING in getlnprob_field_contam detectionprob > 0.999 for [k,L*,dL,Llim]=[', \
+                       kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')')
                 lnp1 = lnp1 + 0 # if integral is ~1 ignore term
 
             else:
@@ -1039,7 +1039,7 @@ class balff_mpd:
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             if nhighz > 0:
                 highz_cand = objent[this_highz == True]
-                for oo in xrange(nhighz): # looping over all objects in data file
+                for oo in range(nhighz): # looping over all objects in data file
                     oent = highz_cand[oo] # entries for objects
                     if self.errdist == 'normal':
                         gaussnorm = dLlim[oent] * np.sqrt(2 * np.pi)
@@ -1057,7 +1057,7 @@ class balff_mpd:
         # ------------- terms for fields w/o highz candidates -------------
         lnp1_nocand = 0.0
         if self.datafileonly == False:
-            for ff in xrange(self.Nfields_nocand):
+            for ff in range(self.Nfields_nocand):
                 field_nocand = self.ufield_nocand[ff]
                 if field_nocand == 'borg_1437+5043':
                     #print 'skipping field: borg_1437+5043'
@@ -1095,16 +1095,16 @@ class balff_mpd:
                 dp_nocand = prob_nocand / norm_nocand
 
                 if dp_nocand > 0.999:
-                    print '--------------------'
-                    print 'Field =',field_nocand
+                    print('--------------------')
+                    print('Field =',field_nocand)
 
                     if dp_nocand >= 2.0: # if not just numerical errors/uncertainty to 1 break
-                        print 'ERROR in getlnprob_field_contam dp_nocand > 2.0 for [k,L*,dL,Llim]=[', \
-                               kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')'
+                        print('ERROR in getlnprob_field_contam dp_nocand > 2.0 for [k,L*,dL,Llim]=[', \
+                               kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')')
                         #pdb.set_trace()
 
-                    print 'WARNING in getlnprob_field_contam dp_nocand > 0.999 for [k,L*,dL,Llim]=[', \
-                           kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')'
+                    print('WARNING in getlnprob_field_contam dp_nocand > 0.999 for [k,L*,dL,Llim]=[', \
+                           kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')')
                     lnp1_nocand = lnp1_nocand + 0 # if integral is ~1 ignore term
 
                 else:
@@ -1168,20 +1168,20 @@ class balff_mpd:
         ftval = self.Ftilde(L, kval, Lstar, Lmean, dL)
         schval = self.schechter(L, kval, Lstar, 'dummy', nonorm=1)
         byhand = (Lmean / Lstar) ** (kval - 1.0) * np.exp(-Lmean / Lstar)
-        if self.vb: print ':: mpd.test_Ftilde :: L=Lmean case: Ftilde, schechter, byhand = ', ftval, schval, byhand
+        if self.vb: print(':: mpd.test_Ftilde :: L=Lmean case: Ftilde, schechter, byhand = ', ftval, schval, byhand)
         # --------------- L = Lstar -------------
         kval, Lmean, dL = 2.0, 1.0, 0.1
         L = Lstar = 0.9
         ftval = self.Ftilde(L, kval, Lstar, Lmean, dL)
         gval = self.gauss(L, Lmean, dL, nonorm=1) * np.exp(-1.0)
         byhand = np.exp(-(Lstar - Lmean) ** 2 / 2. / dL ** 2.) * np.exp(-1)
-        if self.vb: print ':: mpd.test_Ftilde :: L=Lstar case: Ftilde, gauss*C, byhand = ', ftval, gval, byhand
+        if self.vb: print(':: mpd.test_Ftilde :: L=Lstar case: Ftilde, gauss*C, byhand = ', ftval, gval, byhand)
         # --------------- k = 1 -------------
         L, Lstar, Lmean, dL = 0.7, 1.0, 0.8, 0.1
         kval = 1.0
         ftval = self.Ftilde(L, kval, Lstar, Lmean, dL)
         byhand = np.exp(-(L - Lmean) ** 2 / 2. / dL ** 2. - L / Lstar)
-        if self.vb: print ':: mpd.test_Ftilde :: k=1     case: Ftilde, byhand = ', ftval, byhand
+        if self.vb: print(':: mpd.test_Ftilde :: k=1     case: Ftilde, byhand = ', ftval, byhand)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def test_intFtilde(self):
@@ -1196,7 +1196,7 @@ class balff_mpd:
         Lmin = Lmean - Nsigma * dL
         Lmax = Lmean + Nsigma * dL
         byhand, err = scipy.integrate.quad(lambda x: np.exp(-(x - Lmean) ** 2 / 2. / dL ** 2. - x / Lstar), Lmin, Lmax)
-        if self.vb: print ':: mpd.test_intFtilde :: k=1 case: intFtilde, byhand = ', iftval, byhand
+        if self.vb: print(':: mpd.test_intFtilde :: k=1 case: intFtilde, byhand = ', iftval, byhand)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def normalmag(self, L, Lmean, dL, nonorm=0):

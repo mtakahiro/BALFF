@@ -40,18 +40,18 @@ def create_npz_files(fieldname,magapp,redshift,selfct,SN,completeness=1.0,
     Sval, Cval = bSF.get_selfctvalue('test_field',8,25.1,7.9,plot=True)
 
     """
-    if verbose: print ' - Building selection function dictionary'
+    if verbose: print(' - Building selection function dictionary')
     SFdic = {}
     SFdic['Szm']    = np.asarray(selfct)
     SFdic['zGrid'] = np.asarray(redshift)
     SFdic['mGrid'] = np.asarray(magapp)
 
     selfctdict = outputdic + 'Szm_' + fieldname + '_SN' + str(SN) + '.npz'
-    if verbose: print ' - Saving selection function to binary:\n   '+selfctdict
+    if verbose: print(' - Saving selection function to binary:\n   '+selfctdict)
     np.savez(selfctdict,**SFdic)
 
 
-    if verbose: print ' - Building completeness function dictionary'
+    if verbose: print(' - Building completeness function dictionary')
     if len(np.atleast_1d(completeness)) == 1:
         completeness = np.zeros(len(magapp))+completeness/1.
 
@@ -60,7 +60,7 @@ def create_npz_files(fieldname,magapp,redshift,selfct,SN,completeness=1.0,
     Cdic['mGrid'] = np.asarray(magapp)
 
     comfctdict = outputdic + 'C_' + fieldname + '_SN' + str(SN) + '.npz'
-    if verbose: print ' - Saving selection function to binary:\n   '+comfctdict
+    if verbose: print(' - Saving selection function to binary:\n   '+comfctdict)
     np.savez(comfctdict,**Cdic)
 
 
@@ -87,7 +87,7 @@ def get_selfctvalue(fieldname,SN,magapp,redshift,selfctpath = './balff_data/sele
     Sval, Cval = bSF.get_selfctvalue('borg_1230+0750',5,25.1,7.9,plot=True)
 
     """
-    if verbose: print ' - Loading selection and completeness functions '
+    if verbose: print(' - Loading selection and completeness functions ')
     zval, mval, SF, COMP = bSF.load_selfct(fieldname,SN)
 
     # ------------------------------------- SEL FCT -------------------------------------
@@ -124,7 +124,7 @@ def get_selfctvalue(fieldname,SN,magapp,redshift,selfctpath = './balff_data/sele
 
         # overplot intepolated value:
         ax.scatter(redshift, magapp, selfctvalue, c='k', zorder=5)
-        print ' - Value at (redshift,magapp) = (', redshift, ',', magapp, ') was estimated to be ', selfctvalue
+        print(' - Value at (redshift,magapp) = (', redshift, ',', magapp, ') was estimated to be ', selfctvalue)
 
         ax.set_xlabel('z')
         ax.set_ylabel('m apparent')
@@ -152,7 +152,7 @@ def get_selfctvalue(fieldname,SN,magapp,redshift,selfctpath = './balff_data/sele
         fig = plt.figure()
         plt.plot(X, Y, 'k-', label='Completeness function')
         plt.plot(magapp, compfctvalue, 'ko', label='Interpolated value for magapp=' + str(magapp))
-        print ' - Completeness value at magapp =', magapp, ' was estimated to be ', compfctvalue
+        print(' - Completeness value at magapp =', magapp, ' was estimated to be ', compfctvalue)
 
         plt.xlim([np.max(mnew),np.min(mnew)])
         plt.xlabel('m apparent')
@@ -178,7 +178,7 @@ def get_selfctvalue(fieldname,SN,magapp,redshift,selfctpath = './balff_data/sele
                    zorder=6, label='S(z,m)')
         ax.scatter(redshift, magapp, selfctvalue * compfctvalue, c='k', marker='*', s=100,
                    zorder=5, label='S(z,m)*C(m)')
-        print ' - Value at (redshift,magapp) = (', redshift, ',', magapp, ') was estimated to be ', selfctvalue
+        print(' - Value at (redshift,magapp) = (', redshift, ',', magapp, ') was estimated to be ', selfctvalue)
 
         leg = ax.legend(fancybox=True, loc='upper right', numpoints=1)
         leg.get_frame().set_alpha(0.6)
@@ -211,14 +211,14 @@ def load_selfct(fieldname,SN,selfctpath = './balff_data/selectionfunctions/',ver
     comfctdict = selfctpath + 'C_' + fieldname + '_SN' + str(SN).replace('.','p') + '.npz'
 
     if os.path.exists(selfctdict) and os.path.exists(comfctdict):
-        if verbose: print ' - Loading S(z,m) selection function dictionary:\n   '+selfctdict
+        if verbose: print(' - Loading S(z,m) selection function dictionary:\n   '+selfctdict)
         dictSF = np.load(selfctdict, mmap_mode='r+')
         zval   = dictSF['zGrid']
         mvalSF = dictSF['mGrid']
         SF     = dictSF['Szm']
         dictSF.close()        # closing file after use
 
-        if verbose: print ' - Loading C(m) completeness function dictionary:\n   '+comfctdict
+        if verbose: print(' - Loading C(m) completeness function dictionary:\n   '+comfctdict)
         dictCF = np.load(comfctdict, mmap_mode='r+')
         mvalC  = dictCF['mGrid']
         COMP   = dictCF['C']

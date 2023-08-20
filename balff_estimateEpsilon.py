@@ -51,10 +51,10 @@ parser.add_argument("--lookuptable", type=str, help="Dictionary of look-up table
 parser.add_argument("-v", "--verbose", action="store_true", help="Print verbose comments")
 args = parser.parse_args()
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 # Loading MCMC info
-if args.verbose: print ' - Loading MCMC chains and stats'
+if args.verbose: print(' - Loading MCMC chains and stats')
 mcmcdb    = pymc.database.pickle.load(args.mcmcpickle)
 kvaldraw  = mcmcdb.trace('theta')[:,0]
 logLstar  = mcmcdb.trace('theta')[:,1]
@@ -63,11 +63,11 @@ logNdraw  = mcmcdb.trace('theta')[:,2]
 
 Lstardraw = 10**logLstar
 Nmcmc     = len(kvaldraw)
-if args.verbose: print ' - Found ',Nmcmc,' MCMC draws in chains'
+if args.verbose: print(' - Found ',Nmcmc,' MCMC draws in chains')
 
 #-------------------------------------------------------------------------------------------------------------
 # Loading data array
-if args.verbose: print ' - Loading data array'
+if args.verbose: print(' - Loading data array')
 if args.lookuptable:
     lutabval  = args.lookuptable
 else:
@@ -78,7 +78,7 @@ fieldent = np.unique(mpdclass.data['FIELD'],return_index=True)
 fields   = fieldent[0]
 Nfield   = len(fields)
 LJlimmin = np.min(mpdclass.data['LFIELDLIM'])
-if args.verbose: print ' - Found ',Nobj,' objects spread over ',Nfield,' fields'
+if args.verbose: print(' - Found ',Nobj,' objects spread over ',Nfield,' fields')
 #-------------------------------------------------------------------------------------------------------------
 def schechter(L,alpha,Lstar,phistar):
     '''
@@ -108,7 +108,7 @@ def integrateLFL(Lmin,Lmax,Lstar,alpha,phistar,intmethod='trapz'):
         if intvalquad != 0:
             intvaltrapz  = scipy.integrate.trapz(Lval*schechter(Lval,alpha,Lstar,phistar)*(Lval*np.log(10)),logLval)
             intval       = intvaltrapz
-            print intval,intvalquad,intvaltrapz
+            print(intval,intvalquad,intvaltrapz)
         else:
             intval  = intvalquad
     elif intmethod == 'trapz':
@@ -121,7 +121,7 @@ def integrateLFL(Lmin,Lmax,Lstar,alpha,phistar,intmethod='trapz'):
 
 #-------------------------------------------------------------------------------------------------------------
 # Luminoisity densities from the literature
-if args.verbose: print ' - Calculate z~8 log10(epsilon) from literature M* and phi* for comparison:'
+if args.verbose: print(' - Calculate z~8 log10(epsilon) from literature M* and phi* for comparison:')
 labellit   = ['Schmidt et al. (2014) 5sig','Schmidt et al. (2014) 8sig','Bradley et al. (2012)',
               'Oesch et al. (2012)','Bouwens et al. (2011)',
               'Lorenzoni et al. (2011)','Trenti et al. (2011)','McLure et al. (2010)',
@@ -136,13 +136,13 @@ freq        = 2.99e8/wave
 liteps      = np.zeros(Nlit) # literature values of epsilon
 intmeth     = 'trapz' # 'quad'
 
-for ii in xrange(Nlit):
+for ii in range(Nlit):
     oneintval  = integrateLFL(0.1,1000,Lstarlit[ii],alphalit[ii],10**lphistarlit[ii],intmethod=intmeth)
     liteps[ii] = np.log10(oneintval * 1e44 / freq) # luminosity density in units erg/s/Hz/Mpc3
-    if args.verbose: print '   log10(epsilon / [erg/s/Hz/Mpc3]) from ',labellit[ii],' = ',str("%.2f" % liteps[ii])
+    if args.verbose: print('   log10(epsilon / [erg/s/Hz/Mpc3]) from ',labellit[ii],' = ',str("%.2f" % liteps[ii]))
 #-------------------------------------------------------------------------------------------------------------
 # Integrate Nmcmc schechter functions
-if args.verbose: print ' - Calculating epsilon/phi* based on the k and L* MCMC chains'
+if args.verbose: print(' - Calculating epsilon/phi* based on the k and L* MCMC chains')
 epsilon   = np.zeros(Nmcmc)
 t0 = time.time()
 
@@ -151,7 +151,7 @@ if args.Mminintval: # setting the minimum luminoisity to integrate down to
 else:
     Lminintval = 0.0718 # DEFAULT - corresponds to -17.7
 
-for mm in xrange(Nmcmc):
+for mm in range(Nmcmc):
     twointval    = integrateLFL(Lminintval,1000,Lstardraw[mm],kvaldraw[mm]-1.0,1.0,intmethod=intmeth)
     epsilon[mm]  = np.log10(twointval * 1e44 / freq)
 
@@ -165,7 +165,7 @@ for mm in xrange(Nmcmc):
 # Saving epsilon values
 fitsname = args.mcmcpickle.replace('.pickle','_epsilon.fits')
 if args.Mminintval: fitsname = fitsname.replace('.fits','_Mminint'+str(args.Mminintval).replace('.','p')+'.fits')
-if args.verbose: print '\nWriting k, L* and log10(epsilon/phi*) values to fits table :',fitsname
+if args.verbose: print('\nWriting k, L* and log10(epsilon/phi*) values to fits table :',fitsname)
     
 col1  = pyfits.Column(name='K' , format='D', array=kvaldraw)
 col2  = pyfits.Column(name='LSTAR', format='D', array=Lstardraw)
@@ -180,9 +180,9 @@ hdu      = pyfits.PrimaryHDU()             # creating primary (minimal) header
 thdulist = pyfits.HDUList([hdu, tbhdu])    # combine primary and table header to hdulist
 thdulist.writeto(fitsname,clobber=True)    # write fits file (clobber=True overwrites excisting file)
 #-------------------------------------------------------------------------------------------------------------
-print '\nThe mean of the obtained epsilon/phi* values is :',np.mean(epsilon)
+print('\nThe mean of the obtained epsilon/phi* values is :',np.mean(epsilon))
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 
 

@@ -67,7 +67,7 @@ parser.add_argument("--show", action="store_true", help="Showing plots on screen
 parser.add_argument("-v", "--verbose", action="store_true", help="Print verbose comments")
 args = parser.parse_args()
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 # creaing balff_mpd class from data
 if args.lookuptable:
@@ -85,7 +85,7 @@ udfersent      = np.append(udfent,ersent)
 #-------------------------------------------------------------------------------------------------------------
 # Loading mcmc resuts
 MM = pymc.database.pickle.load(args.picklefile)
-if args.verbose: print ' - Loaded chains from ',args.picklefile
+if args.verbose: print(' - Loaded chains from ',args.picklefile)
 kdrawn         = MM.trace('theta')[:,0] 
 logLstardrawn  = MM.trace('theta')[:,1]
 logNdraw       = MM.trace('theta')[:,2]
@@ -108,8 +108,8 @@ else:
 #-------------------------------------------------------------------------------------------------------------
 # load phistar table if requested
 if not args.phistarval:
-    if args.verbose: print '\n - NB: Setting log10(phi*) to default value of -3.0  ' \
-                           '(otherwise provide it with "--phistarval") \n'
+    if args.verbose: print('\n - NB: Setting log10(phi*) to default value of -3.0  ' \
+                           '(otherwise provide it with "--phistarval") \n')
     l10phistar = -3.0 # DEFAULT value
 else:
     l10phistar = args.phistarval
@@ -165,7 +165,7 @@ UDFlum      = data[udfersent]
 UDFMabs     = UDFmag - 47.04 #butil.L2Mabs(UDFlum,MUVsun=5.48)
 
 UDFNobjcalc = np.zeros(7)
-for ii in xrange(7):
+for ii in range(7):
     UDFNobjcalc[ii] = len(np.where((UDFMabs >= UDFbinedges[ii]) & (UDFMabs < UDFbinedges[ii+1]))[0])
 UDFvalcalc  = UDFNobjcalc/UDFvolumes/UDFmagbin  # #Nobj/Mpc3/mag
 
@@ -182,17 +182,17 @@ BoRGval      = BoRGNobj/BoRGvolumes/BoRGmagbin  # #Nobj/Mpc3/mag
 BoRGlum      = data[borgent]
 BoRGMabs     = butil.L2Mabs(BoRGlum,MUVsun=5.48)
 BoRGNobjcalc = np.zeros(5)
-for ii in xrange(5):
+for ii in range(5):
     BoRGNobjcalc[ii] = len(np.where((BoRGMabs > BoRGbinedges[ii]) & (BoRGMabs < BoRGbinedges[ii+1]))[0])
 BoRGNfaint   = len(np.where(BoRGMabs > BoRGbinedges[-1])[0])
 
 if args.bradley12:
     BoRGvolumesCalc = BoRGvolumes
 else:
-    print ' - Data volume estimates not properly enabled (use --bradley12 keyword) --> ABORTING'
+    print(' - Data volume estimates not properly enabled (use --bradley12 keyword) --> ABORTING')
     pdb.set_trace()
 
-    if args.verbose: print ' - Calculating volumes for binned data'
+    if args.verbose: print(' - Calculating volumes for binned data')
     sigmacut = args.sigval
     voldict  = np.load('balff_estimateVolumes_BoRG13volumes.npz') # volumes calc w. balff_estimateVolumes.py
     Mabsvol  = butil.L2Mabs(voldict['Lval'],MUVsun=5.48)
@@ -200,10 +200,10 @@ else:
 
     Nmagbin = len(BoRGbincen)
     BoRGvolumesCalc = np.zeros(Nmagbin)
-    for vv in xrange(Nmagbin):
+    for vv in range(Nmagbin):
         ent                 = np.where((Mabsvol > BoRGbinedges[ii]) & (Mabsvol < BoRGbinedges[ii+1]))[0]
         BoRGvolumesCalc[vv] = np.abs(scipy.integrate.trapz(volfct[ent],Mabsvol[ent])) # np.abs 'cause int over mag
-        print Mabsvol[ent]
+        print(Mabsvol[ent])
 
     pdb.set_trace()
         
@@ -222,7 +222,7 @@ plt.rc('ytick', labelsize=Fsize)
 pname2 = outdir+picklebase+'_pymcsampling.pdf'
 if args.eps: pname2 = pname2.replace('.pdf','.eps')
 if args.png: pname2 = pname2.replace('.pdf','.png')
-if args.verbose: print ' - Plotting k-logL* plan with samples to',pname2
+if args.verbose: print(' - Plotting k-logL* plan with samples to',pname2)
 plt.clf()
 
 kvaldraw      = np.median(kdrawn)
@@ -249,7 +249,7 @@ if args.show: plt.show()  # draw plot on screen
 pname3 = outdir+picklebase+'_alphaMstar.pdf'
 if args.eps: pname3 = pname3.replace('.pdf','.eps')
 if args.png: pname3 = pname3.replace('.pdf','.png')
-if args.verbose: print ' - Plotting alpha-M* plan with samples to',pname3
+if args.verbose: print(' - Plotting alpha-M* plan with samples to',pname3)
 plt.clf()
 
 alphadraw   = kdrawn-1.0
@@ -269,9 +269,9 @@ dMstarm     = Mstarval - Mstarvalm
 dMstarp     = Mstarvalp - Mstarval
 
 if args.verbose:
-    print ' - The obtained values of M* and alpha are (68% conf):'
-    print '   M*    = ',str("%.2f" % Mstarval),'+',str("%.2f" % dMstarp),'-',str("%.2f" % dMstarm)
-    print '   alpha = ',str("%.2f" % alphaval),'+',str("%.2f" % dalphap),'-',str("%.2f" % dalpham)
+    print(' - The obtained values of M* and alpha are (68% conf):')
+    print('   M*    = ',str("%.2f" % Mstarval),'+',str("%.2f" % dMstarp),'-',str("%.2f" % dMstarm))
+    print('   alpha = ',str("%.2f" % alphaval),'+',str("%.2f" % dalphap),'-',str("%.2f" % dalpham))
 
 amin        = np.min(alphadraw)
 amax        = np.max(alphadraw)
@@ -299,7 +299,7 @@ sortindex = np.argsort(kde_int,axis=None)[::-1]
 gridsigma = np.zeros((binx,biny))
 
 sum = 0.0
-for ss in xrange(Nval):
+for ss in range(Nval):
     xx  = np.where(kde_int == kde_flat[sortindex[ss]])
     sum = sum + np.sum(kde_int[xx])
     if (sum < 0.68): gridsigma[xx] = 1.0
@@ -341,7 +341,7 @@ if args.show: plt.show()  # draw plot on screen
 pname = outdir+picklebase+'_pymcRAMfit.pdf'
 if args.eps: pname = pname.replace('.pdf','.eps')
 if args.png: pname = pname.replace('.pdf','.png')
-if args.verbose: print ' - Plotting MCMC Schechter(<k>,<L*>) and input data to',pname
+if args.verbose: print(' - Plotting MCMC Schechter(<k>,<L*>) and input data to',pname)
 plt.clf()
 Llim     = mpdclass.data['LFIELDLIM'][0] # assuming Llim is the same for all fields
 phistar  = 1.0
@@ -352,9 +352,9 @@ Nvals    = 1000
 if kvaldraw > -1: # checking that kvaldraw is inside allowed range for simulate_schechter_distribution
     schval  = butil.simulate_schechter_distribution(kvaldraw-1, 10**logLstardraw, Llim, Nvals, trunmax = 30)
     if len(schval) < Nvals:
-        if args.verbose: print '      LOOPFAULT: went into long loop, broke out with only ',len(schval),'drawn values'
+        if args.verbose: print('      LOOPFAULT: went into long loop, broke out with only ',len(schval),'drawn values')
     if (schval == 0).all() :
-        if args.verbose: print '      LOOPFAULT: went into infinite loop, broke out with  array of zeros'
+        if args.verbose: print('      LOOPFAULT: went into infinite loop, broke out with  array of zeros')
 else:
     schval  = np.linspace(0,10,Nvals)
 
@@ -382,7 +382,7 @@ plt.savefig(pname)
 pnameLF = outdir+picklebase+'_LFcomparison.pdf'
 if args.eps: pnameLF = pnameLF.replace('.pdf','.eps')
 if args.png: pnameLF = pnameLF.replace('.pdf','.png')
-if args.verbose: print ' - Plotting the MCMC Schechter function with literature Schechters to',pnameLF
+if args.verbose: print(' - Plotting the MCMC Schechter function with literature Schechters to',pnameLF)
 plt.clf()
 # Data from table 9 in Bradley et al. 2012
 labelsB12   = ['Bradley et al. (2012)','Oesch et al. (2012)','Bouwens et al. (2011b)','Lorenzoni et al. (2011)','Trenti et al. (2011)','McLure et al. (2010)','Bouwens et al. (2010a)','Schenker et al. (2013)','McLure et al. (2013)']
@@ -446,7 +446,7 @@ plt.savefig(pnameLF)
 pnameLFm = outdir+picklebase+'_LFcomparisonMabs.pdf'
 if args.eps: pnameLFm = pnameLFm.replace('.pdf','.eps')
 if args.png: pnameLFm = pnameLFm.replace('.pdf','.png')
-if args.verbose: print ' - Plotting the MCMC Schechter function (Mabs) with literature Schechters to',pnameLFm
+if args.verbose: print(' - Plotting the MCMC Schechter function (Mabs) with literature Schechters to',pnameLFm)
 plt.clf()
 
 # Indicate Data Range
@@ -467,8 +467,8 @@ schvalpm = mpdclass.schechterMabs(Mvalues,phistarMCMC,Mstarvalp,alphavalm+1.0)
 schvalmp = mpdclass.schechterMabs(Mvalues,phistarMCMC,Mstarvalm,alphavalp+1.0)
 
 schvalarr = np.array([schvalpp,schvalmm,schvalpm,schvalmp])
-schvalmin = [np.min(schvalarr[:,ii]) for ii in xrange(len(Mvalues))]
-schvalmax = [np.max(schvalarr[:,ii]) for ii in xrange(len(Mvalues))]
+schvalmin = [np.min(schvalarr[:,ii]) for ii in range(len(Mvalues))]
+schvalmax = [np.max(schvalarr[:,ii]) for ii in range(len(Mvalues))]
 
 plt.fill_between(Mvalues,schvalmin,schvalmax,alpha=0.20,color='k',zorder=-1)
 
@@ -548,14 +548,14 @@ plt.savefig(pnameLFm)
 #-------------------------------------------------------------------------------------------------------------
 # summarizing output files.
 if args.verbose: 
-    print '\n - Created the plots:'
-    print pname
-    print pnameLF
-    print pnameLFm
-    print pname2
-    print pname3
+    print('\n - Created the plots:')
+    print(pname)
+    print(pnameLF)
+    print(pnameLFm)
+    print(pname2)
+    print(pname3)
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 
 

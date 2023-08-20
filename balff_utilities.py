@@ -27,12 +27,12 @@ def getAv(RA,DEC,filter,dustmaps='/Users/kschmidt/work/dustmaps/SFD_dust_4096_%s
     magcorr   = extlaw.correctPhotometry(mag,bandwavelength)
 
     """
-    if isinstance(RA,types.FloatType):
+    if isinstance(RA,float):
         Nvals = 1
-    elif isinstance(RA,types.IntType):
+    elif isinstance(RA,int):
         Nvals = 1
     else:
-        Nvals = range(len(RA))
+        Nvals = list(range(len(RA)))
 
     if Nvals > 1:
         gall        = []
@@ -92,13 +92,13 @@ def magapp2abs(Mapp,zobj,RA,DEC,Av=-99,band='Jbradley2012',cos='WMAP7BAOH0',verb
     if band == 'Jbradley2012':
         Mabs          = np.array([Mapp - 47.14])
     else:
-        if verbose: print ' - No valid band provided so calculating Dlum and K-correction to get Mabs'
+        if verbose: print(' - No valid band provided so calculating Dlum and K-correction to get Mabs')
         cosmo = choose_cosmology(cos)
         Dlum   = coords.funcs.cosmo_z_to_dist(zobj, zerr=None, disttype='luminosity')*1e6 # luminosity distance in pc
         Kcorrection   = (2.5 * np.log10(1.0 + zobj)) # assumes source has flat (beta = -2) SED.
                                                      # A bluer beta will likely give you an additional
                                                      # correction of about ~0.1 mag or so.
-        if isinstance(Mapp,types.FloatType) and Av == -99: # if Av is -99, calculate it
+        if isinstance(Mapp,float) and Av == -99: # if Av is -99, calculate it
             Av, Ebv = butil.getAv(RA,DEC,band)
             Mabs    = Mapp - 5*np.log10(Dlum)+5 + Kcorrection - Av # corrected absolut magnitude of objects\
         else:
@@ -134,7 +134,7 @@ def magabs2app(Mabs,zobj,RA,DEC,Av=-99,band=None,cos='WMAP7BAOH0'):
         Kcorrection   = (2.5 * np.log10(1.0 + zobj)) # assumes source has flat (beta = -2) SED.
                                                      # A bluer beta will likely give you an additional
                                                      # correction of about ~0.1 mag or so.
-        if isinstance(Mabs,types.FloatType) and Av == -99: # if Av is -99, calculate it
+        if isinstance(Mabs,float) and Av == -99: # if Av is -99, calculate it
             Av, Ebv = getAv(RA,DEC,band)
             Mapp    = Mabs + 5*np.log10(Dlum) - 5 - Kcorrection + Av # corrected absolut magnitude of objects
         else:
@@ -181,7 +181,7 @@ def interpn(*args, **kw):
     """
     method = kw.pop('method', 'linear')
     if kw:
-        raise ValueError("Unknown arguments: " % kw.keys())
+        raise ValueError("Unknown arguments: " % list(kw.keys()))
     nd = (len(args)-1)//2
     if len(args) != 2*nd+1:
         raise ValueError("Wrong number of arguments")
@@ -301,7 +301,7 @@ def confcontours(xpoints,ypoints,binx=200,biny=200):
     gridsigma   = np.zeros((binx,biny))
 
     sum = 0.0
-    for ss in xrange(Nval):
+    for ss in range(Nval):
         xx  = np.where(kde_int == kde_flat[sortindex[ss]])
         sum = sum + np.sum(kde_int[xx])
         if (sum < 0.68): gridsigma[xx] = 1.0

@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 #+
 #----------------------------
 #   NAME
@@ -79,7 +78,7 @@ import sys
 import numpy as np
 import pdb
 import pymc
-import commands
+import subprocess
 import os
 from pymc.Matplot import plot
 import time
@@ -108,21 +107,21 @@ parser.add_argument("-v", "--verbose", action="store_true", help="Set verbosity 
 args = parser.parse_args()
 #-------------------------------------------------------------------------------------------------------------
 if args.verbose:
-    print ' '
-    print ':: '+sys.argv[0]+' :: -- START OF PROGRAM -- '
-    print ' '
+    print(' ')
+    print(':: '+sys.argv[0]+' :: -- START OF PROGRAM -- ')
+    print(' ')
 #-------------------------------------------------------------------------------------------------------------
 if args.lookuptable:
     lutabval  = args.lookuptable
 else:
     lutabval  = None
-if args.verbose: print ' - Lookuptable         :',lutabval
+if args.verbose: print(' - Lookuptable         :',lutabval)
 #-------------------------------------------------------------------------------------------------------------
 if args.selectionfct:
     selfctval = args.selectionfct
 else:
     selfctval = 0
-if args.verbose: print ' - Selection function  :',selfctval
+if args.verbose: print(' - Selection function  :',selfctval)
 if selfctval == 1:
     loadval = True
 else:
@@ -131,27 +130,27 @@ else:
 if args.errdist:
     errdist  = args.errdist
     if errdist not in ['normal','lognormal','normalmag','magbias']:
-        if args.verbose: print '\n - NB! False errdist "'+errdist+'" provided, using default errdist=normal'
+        if args.verbose: print('\n - NB! False errdist "'+errdist+'" provided, using default errdist=normal')
         errdist  = 'normal'
 else:
     errdist  = 'normal'
-if args.verbose: print ' - Error distribution  :',errdist
+if args.verbose: print(' - Error distribution  :',errdist)
 #-------------------------------------------------------------------------------------------------------------
 if args.contamfrac != None:
     contamfrac = args.contamfrac
 else:
     contamfrac = 0.42
-if args.verbose: print ' - Contamfrac          :',contamfrac
+if args.verbose: print(' - Contamfrac          :',contamfrac)
 #-------------------------------------------------------------------------------------------------------------
 if args.datafileonly:
     datafileonly = True
 else:
     datafileonly = False
-if args.verbose: print ' - Datafile only?      :',datafileonly
+if args.verbose: print(' - Datafile only?      :',datafileonly)
 #-------------------------------------------------------------------------------------------------------------
 if args.chainstart:
     chainstart = [args.chainstart[0],args.chainstart[1],args.chainstart[2]]
-    if args.verbose: print ' - Start MCMC chain at :',chainstart
+    if args.verbose: print(' - Start MCMC chain at :',chainstart)
 else:
     chainstart = None
 #-------------------------------------------------------------------------------------------------------------
@@ -159,13 +158,13 @@ if args.emptysim:
     emptysim = True
 else:
     emptysim = False
-if args.verbose: print ' - Using empty sims?   :',emptysim
+if args.verbose: print(' - Using empty sims?   :',emptysim)
 #-------------------------------------------------------------------------------------------------------------
 if args.LFredshift:
     LFredshift = args.LFredshift
 else:
     LFredshift = 8.0
-if args.verbose: print ' - What z is the LF at?:',LFredshift
+if args.verbose: print(' - What z is the LF at?:',LFredshift)
 #-------------------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------------------------
@@ -185,7 +184,7 @@ else:
     logNmax        =  50.0
 #-------------------------------------------------------------------------------------------------------------
 # Loading data to be fitted
-if args.verbose: print ' - Loading data and creating balff_mpd class'
+if args.verbose: print(' - Loading data and creating balff_mpd class')
 mpdclass       = mpd.balff_mpd(args.datafile,lookuptable=lutabval, verbose=1,
                                  errdist=errdist,logLmin=-4,contamfrac=contamfrac,
                                  datafileonly=datafileonly,selectionfunction=selfctval,
@@ -193,7 +192,7 @@ mpdclass       = mpd.balff_mpd(args.datafile,lookuptable=lutabval, verbose=1,
 
 data           = mpdclass.data['LOBJ']
 Nobj           = mpdclass.Nobj
-print 'There are ',Nobj,' High z objects'
+print('There are ',Nobj,' High z objects')
 #-------------------------------------------------------------------------------------------------------------
 # new step method
 class simplegibbs(pymc.StepMethod):
@@ -215,16 +214,16 @@ class simplegibbs(pymc.StepMethod):
         return state
 #-------------------------------------------------------------------------------------------------------------
 # Stochastic variables (not detemined completely by the parents, i.e., drawn from a probability distribution)
-if args.verbose: print ' - Defining probaility distributions for k, L* and Nobjuniverse draws'
+if args.verbose: print(' - Defining probaility distributions for k, L* and Nobjuniverse draws')
 docstr         = 'Theta containing the Schecter shape parameter k and log10 of the Schechter scale paramter L* in ' \
                  'units [1e44 erg/s] as well as log10 of the inferred number of galaxies in the Universe Nobjuniverse'
 thetamin       = [kmin,logLstarmin,logNmin]
 thetamax       = [kmax,logLstarmax,logNmax]
 thetasample    = pymc.Uniform('theta',size=3,lower=thetamin,upper=thetamax,
                               observed=False,doc=docstr,verbose=0,value=chainstart)
-if args.verbose: print ' - Sample range k      : [',thetamin[0],',',thetamax[0],']'
-if args.verbose: print ' - Sample range logL*  : [',thetamin[1],',',thetamax[1],']'
-if args.verbose: print ' - Sample range logN   : [',thetamin[2],',',thetamax[2],']'
+if args.verbose: print(' - Sample range k      : [',thetamin[0],',',thetamax[0],']')
+if args.verbose: print(' - Sample range logL*  : [',thetamin[1],',',thetamax[1],']')
+if args.verbose: print(' - Sample range logN   : [',thetamin[2],',',thetamax[2],']')
 #-------------------------------------------------------------------------------------------------------------
 # Selecting a subset of the high-z candidates from a Bernoulli distribution provided a contamination fraction
 useallcontam = 'yes'
@@ -232,12 +231,12 @@ if useallcontam == 'yes':
     bernoulliprob = 0.0
 elif useallcontam == 'no':
     bernoulliprob = mpdclass.contamfracarr
-if args.verbose: print ' - Defining HighZ canidates to include given contamination (use all? ',useallcontam,')'
+if args.verbose: print(' - Defining HighZ canidates to include given contamination (use all? ',useallcontam,')')
 HighZ = pymc.Bernoulli('highz', size=Nobj, p=1-bernoulliprob)
 
 #-------------------------------------------------------------------------------------------------------------
 # Data model. The sampling of the data with drawn variables
-if args.verbose: print ' - Defining mpd model of data  @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+if args.verbose: print(' - Defining mpd model of data  @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime()))
 @pymc.stochastic(dtype=float,observed=True,plot=False)
 def mpdmodel(value=data, theta=thetasample, HighZ=HighZ):
     """
@@ -260,16 +259,16 @@ def mpdmodel(value=data, theta=thetasample, HighZ=HighZ):
 
     if args.lnptime:
         stop  = time.time()
-        print 'ln(prop) dt [s]  : ',stop-start
+        print('ln(prop) dt [s]  : ',stop-start)
 
     return lnprob
 #-------------------------------------------------------------------------------------------------------------
 # get a pymc sampler
-if args.verbose: print ' - Initialize the pymc MCMC sampler'
+if args.verbose: print(' - Initialize the pymc MCMC sampler')
 contstr      = 'contamfrac'+str(contamfrac).replace('.','p')
 
 if not os.path.isdir('./balff_output/'):
-    if args.verbose: print ' - Did not find "./balff_output/" so creating it'
+    if args.verbose: print(' - Did not find "./balff_output/" so creating it')
     os.mkdir('./balff_output/')
 
 if args.lookuptable:  # set data base file to save to.
@@ -283,12 +282,12 @@ if args.emptysim:
 MM = pymc.MCMC({'theta':thetasample,'mpdmodel':mpdmodel},db='pickle',dbname=dbname) # no sampling over HighZ
 #-------------------------------------------------------------------------------------------------------------
 # selecting MCMC step method to use
-if args.verbose: print ' - Select step method for k logL* and logN samples'
+if args.verbose: print(' - Select step method for k logL* and logN samples')
 
 pdist = 'Normal' # Default proposal distribution
 if args.pdist:
     pdist = args.pdist
-if args.verbose: print '   (Using the proposal distribution "',pdist,'")'
+if args.verbose: print('   (Using the proposal distribution "',pdist,'")')
 
 if args.step == 'metropolis':
     pdist_sd = 3.0
@@ -303,7 +302,7 @@ else: # use RAM as default
                        proposal_covar=covar_guess,proposal_distribution=pdist)
 
 if args.verbose:
-    print ' - Chosen step method for theta',MM.step_method_dict[thetasample]
+    print(' - Chosen step method for theta',MM.step_method_dict[thetasample])
 #-------------------------------------------------------------------------------------------------------------
 # Before we start the MCMC sampler test to make sure that the RAM step is properly initialized.
 if args.step != 'metropolis':
@@ -311,7 +310,7 @@ if args.step != 'metropolis':
     assert RAM._dim == 3
 #-------------------------------------------------------------------------------------------------------------
 # DEFAULT values
-if args.verbose: print ' - MCMC sampling start @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+if args.verbose: print(' - MCMC sampling start @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime()))
 Niter = 10000
 Nburn = 1000
 Nthin = 10
@@ -319,45 +318,45 @@ Nthin = 10
 if args.Niter: Niter = args.Niter
 if args.Niter: Nburn = args.Nburn
 if args.Niter: Nthin = args.Nthin
-if args.verbose: print '   (running with Niter =',Niter,', Nburn = ',Nburn,', Nthin = ',Nthin,')'
+if args.verbose: print('   (running with Niter =',Niter,', Nburn = ',Nburn,', Nthin = ',Nthin,')')
 
 MM.db # opening data base file to write to disk
 MM.sample(iter=Niter,burn=Nburn,thin=Nthin,progress_bar=True)      # sample the model
-if args.verbose: print '\n - MCMC sampling done  @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+if args.verbose: print('\n - MCMC sampling done  @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime()))
 
 dbstate              = MM.db.getstate()['step_methods']
 
 if args.step == 'metropolis':
     ent = 0
-    accept = dbstate[dbstate.keys()[ent]]['accepted']
-    reject = dbstate[dbstate.keys()[ent]]['rejected']
+    accept = dbstate[list(dbstate.keys())[ent]]['accepted']
+    reject = dbstate[list(dbstate.keys())[ent]]['rejected']
 else:
     ent = 0
-    accept = dbstate[dbstate.keys()[ent]]['_accepted']
-    reject = dbstate[dbstate.keys()[ent]]['_rejected']
+    accept = dbstate[list(dbstate.keys())[ent]]['_accepted']
+    reject = dbstate[list(dbstate.keys())[ent]]['_rejected']
 
 acceptancerate_theta = accept / (reject+accept)
 
 if args.verbose:
-    print '      with theta = (k,L*,N) acceptance rate =',acceptancerate_theta
-    print '      No. of accepted steps = '+str(accept)
-    print '      No. of rejected steps = '+str(reject)
+    print('      with theta = (k,L*,N) acceptance rate =',acceptancerate_theta)
+    print('      No. of accepted steps = '+str(accept))
+    print('      No. of rejected steps = '+str(reject))
 
 MM.db.close()
-if args.verbose: print ' - Saved chains to ',dbname
+if args.verbose: print(' - Saved chains to ',dbname)
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print ' - Plot logNobjuniverse, k and logLstar samples'
+if args.verbose: print(' - Plot logNobjuniverse, k and logLstar samples')
 plot(MM)                                         # plotting results
 
 if not os.path.isdir('./balff_plots/'):
-    if args.verbose: print ' - Did not find "./balff_plots/" so creating it'
+    if args.verbose: print(' - Did not find "./balff_plots/" so creating it')
     os.mkdir('./balff_plots/')
 
 thetafile = './balff_plots/'+dbname.split('balff_output/')[-1].replace('.pickle','_theta.png')
-if args.verbose: print ' - Moving theta_2.png to',thetafile
-out = commands.getoutput('mv theta_2.png '+thetafile)
+if args.verbose: print(' - Moving theta_2.png to',thetafile)
+out = subprocess.getoutput('mv theta_2.png '+thetafile)
 
-if args.verbose: print '\n - Printing Summary'
+if args.verbose: print('\n - Printing Summary')
 statval = 1 # resetting stat indicator
 ssval = MM.stats() # checking that stats can be created
 
@@ -372,7 +371,7 @@ if statval == 1:
     if args.emptysim:
         statcsv = statcsv.replace('.csv','_emptysim.csv')
 
-    if args.verbose: print '\n - Writing stat of chains to',statcsv
+    if args.verbose: print('\n - Writing stat of chains to',statcsv)
     MM.write_csv(statcsv, variables=["theta"])
 
 #-------------------------------------------------------------------------------------------------------------
@@ -385,9 +384,9 @@ if qp2 == 1:
     kdrawn         = db.trace('theta')[:,0]
     logLstardrawn  = db.trace('theta')[:,1]
     logNdrawn      = db.trace('theta')[:,2]
-    print 'k    unique', len(np.unique(kdrawn))
-    print 'logL unique', len(np.unique(logLstardrawn))
-    print 'logN unique', len(np.unique(logNdrawn))
+    print('k    unique', len(np.unique(kdrawn)))
+    print('logL unique', len(np.unique(logLstardrawn)))
+    print('logN unique', len(np.unique(logNdrawn)))
 
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(12, 12))
@@ -417,12 +416,12 @@ if qp2 == 1:
     if args.chainstart: plt.plot(chainstart[0],chainstart[2],'rs',ms=10)
 
     plt.savefig(samplespacefig)
-    if args.verbose: print '\n - Saved ',samplespacefig
+    if args.verbose: print('\n - Saved ',samplespacefig)
 #-------------------------------------------------------------------------------------------------------------
 if args.verbose:
-    print ' '
-    print ':: '+sys.argv[0]+' :: -- END OF PROGRAM -- '
-    print ' '
+    print(' ')
+    print(':: '+sys.argv[0]+' :: -- END OF PROGRAM -- ')
+    print(' ')
 #-------------------------------------------------------------------------------------------------------------
 
 

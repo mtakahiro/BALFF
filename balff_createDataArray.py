@@ -24,7 +24,7 @@ def write_fitsfile(objname,field,Lobj,Lobjerr,Lfieldlim,Lfieldlimerr,Llimsig,
     see bcda.test_write_fitsfile_onBoRG() below
 
     """
-    if verbose: print ' - Setting up output file '
+    if verbose: print(' - Setting up output file ')
     col1     = pyfits.Column(name='OBJNAME'      , format='A30', array=objname)
     col2     = pyfits.Column(name='FIELD'        , format='A30', array=field)
     col3     = pyfits.Column(name='LOBJ'         , format='D'  , array=Lobj)
@@ -37,7 +37,7 @@ def write_fitsfile(objname,field,Lobj,Lobjerr,Lfieldlim,Lfieldlimerr,Llimsig,
     # writing hdrkeys:   '---KEY--',                  '----------------MAX LENGTH COMMENT-------------'
     tbhdu.header.append(('LLIMSIG ',Llimsig           ,'Sigmas field limiting lum. corresponds to'),end=True)
 
-    if verbose: print ' - Writing simulated data to fits table '+outputname
+    if verbose: print(' - Writing simulated data to fits table '+outputname)
     hdu      = pyfits.PrimaryHDU()             # creating primary (minimal) header
     thdulist = pyfits.HDUList([hdu, tbhdu])    # combine primary and table header to hdulist
     thdulist.writeto(outputname,clobber=True)  # write fits file (clobber=True overwrites excisting file)

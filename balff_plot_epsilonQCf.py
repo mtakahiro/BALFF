@@ -66,7 +66,7 @@ parser.add_argument("--show", action="store_true", help="Showing plots on screen
 parser.add_argument("-v", "--verbose", action="store_true", help="Print verbose comments")
 args = parser.parse_args()
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 # load phistar data
 datfitsPS    = pyfits.open(args.phistarfile)
@@ -83,9 +83,9 @@ Mlim      = np.zeros(Nepsfiles)
 for ii in range(Nepsfiles):
     try:
         Mlim[ii] = float(epsfiles[ii].split('Mminint')[-1].split('.')[0].replace('p','.'))
-        if args.verbose: print "Performed Mminint string-split for, i.e. will include data from:\n",epsfiles[ii]
+        if args.verbose: print("Performed Mminint string-split for, i.e. will include data from:\n",epsfiles[ii])
     except:
-        print "Couldn't perform Mminint string-split for ",epsfiles[ii]
+        print("Couldn't perform Mminint string-split for ",epsfiles[ii])
 #-------------------------------------------------------------------------------------------------------------
 # Draw values for C, f, and ksi
 Nmcmc     = NPS
@@ -130,12 +130,12 @@ plt.rc('ytick', labelsize=Fsize)
 pname = './balff_plots/'+args.epsilonfile.split('/')[-1].split('_epsilon_')[0]+'_QCfvsMlim.pdf'
 if args.eps: pname = pname.replace('.pdf','.eps')
 if args.png: pname = pname.replace('.pdf','.png')
-if args.verbose: print ' - Plotting QC/f vs Mlim to \n  ',pname
+if args.verbose: print(' - Plotting QC/f vs Mlim to \n  ',pname)
 
 logQCfvec      = np.zeros(Nepsfiles)
 logQCfvec_errp = np.zeros(Nepsfiles)
 logQCfvec_errm = np.zeros(Nepsfiles)
-for ii in xrange(Nepsfiles):
+for ii in range(Nepsfiles):
     logQCfall     = logepsilonval[ii,:]+logksival[ii,:]-50.31
     logQCfvec[ii] = np.median(logQCfall )
 
@@ -145,8 +145,8 @@ for ii in xrange(Nepsfiles):
     logQCfvec_errp[ii] = errp - logQCfvec[ii]
 
     if args.verbose:
-        print ' - The obtained value of log(QC/f) for Mlim='+str(Mlim[ii])+' is (68% conf):'
-        print '   log(QC/f)      = ',str("%.2f" % logQCfvec[ii]),'+',str("%.2f" % logQCfvec_errp[ii]),'-',str("%.2f" % logQCfvec_errm[ii])
+        print(' - The obtained value of log(QC/f) for Mlim='+str(Mlim[ii])+' is (68% conf):')
+        print('   log(QC/f)      = ',str("%.2f" % logQCfvec[ii]),'+',str("%.2f" % logQCfvec_errp[ii]),'-',str("%.2f" % logQCfvec_errm[ii]))
 
 ymax,ymin = np.max(logQCfvec+logQCfvec_errp),np.min(logQCfvec-logQCfvec_errm)
 plt.clf()
@@ -176,12 +176,12 @@ if args.show: plt.show()  # draw plot on screen
 pname = './balff_plots/'+args.epsilonfile.split('/')[-1].split('_epsilon_')[0]+'_QvsMlim.pdf'
 if args.eps: pname = pname.replace('.pdf','.eps')
 if args.png: pname = pname.replace('.pdf','.png')
-if args.verbose: print ' - Plotting Q vs Mlim to \n  ',pname
+if args.verbose: print(' - Plotting Q vs Mlim to \n  ',pname)
 
 logQvec      = np.zeros(Nepsfiles)
 logQvec_errp = np.zeros(Nepsfiles)
 logQvec_errm = np.zeros(Nepsfiles)
-for ii in xrange(Nepsfiles):
+for ii in range(Nepsfiles):
     logQall     = logepsilonval[ii,:]+logksival[ii,:]-50.31-np.log10(Cval[ii,:])+np.log10(fval[ii,:])
     logQvec[ii] = np.median(logQall )
 
@@ -191,8 +191,8 @@ for ii in xrange(Nepsfiles):
     logQvec_errp[ii] = errp - logQvec[ii]
 
     if args.verbose:
-        print ' - The obtained value of log(Q) for Mlim='+str(Mlim[ii])+' is (68% conf):'
-        print '   log(Q)      = ',str("%.2f" % logQvec[ii]),'+',str("%.2f" % logQvec_errp[ii]),'-',str("%.2f" % logQvec_errm[ii])
+        print(' - The obtained value of log(Q) for Mlim='+str(Mlim[ii])+' is (68% conf):')
+        print('   log(Q)      = ',str("%.2f" % logQvec[ii]),'+',str("%.2f" % logQvec_errp[ii]),'-',str("%.2f" % logQvec_errm[ii]))
 
 ymax,ymin = np.max(logQvec+logQvec_errp),np.min(logQvec-logQvec_errm)
 plt.clf()
@@ -223,14 +223,14 @@ if args.show: plt.show()  # draw plot on screen
 pname = './balff_plots/'+args.epsilonfile.split('/')[-1].split('_epsilon_')[0]+'_cfvsMlim.pdf'
 if args.eps: pname = pname.replace('.pdf','.eps')
 if args.png: pname = pname.replace('.pdf','.png')
-if args.verbose: print ' - Plotting log(C/f) vs Mlim to \n  ',pname
+if args.verbose: print(' - Plotting log(C/f) vs Mlim to \n  ',pname)
 
 logcfvec      = np.zeros(Nepsfiles)
 logcfvec_errp = np.zeros(Nepsfiles)
 logcfvec_errm = np.zeros(Nepsfiles)
 Qfixed        = 0.5
 
-for ii in xrange(Nepsfiles):
+for ii in range(Nepsfiles):
     logcfall      = logepsilonval[ii,:]+logksival[ii,:]-50.31-np.log10(Qfixed)
     #logcfall     = np.log10(Cval[ii,:])-np.log10(fval[ii,:])
     logcfvec[ii] = np.median(logcfall )
@@ -241,8 +241,8 @@ for ii in xrange(Nepsfiles):
     logcfvec_errp[ii] = errp - logcfvec[ii]
 
     if args.verbose:
-        print ' - The obtained value of log(Q) for Mlim='+str(Mlim[ii])+' is (68% conf):'
-        print '   log(C/f)      = ',str("%.2f" % logcfvec[ii]),'+',str("%.2f" % logcfvec_errp[ii]),'-',str("%.2f" % logcfvec_errm[ii])
+        print(' - The obtained value of log(Q) for Mlim='+str(Mlim[ii])+' is (68% conf):')
+        print('   log(C/f)      = ',str("%.2f" % logcfvec[ii]),'+',str("%.2f" % logcfvec_errp[ii]),'-',str("%.2f" % logcfvec_errm[ii]))
 
 ymax,ymin = np.max(logcfvec+logcfvec_errp),np.min(logcfvec-logcfvec_errm)
 plt.clf()
@@ -272,7 +272,7 @@ if args.phistarfile:
     pnamePS = './balff_plots/'+args.phistarfile.split('/')[-1].replace('.fits','_phistarhist_QCf.pdf')
     if args.eps: pnamePS = pnamePS.replace('.pdf','.eps')
     if args.png: pnamePS = pnamePS.replace('.pdf','.png')
-    if args.verbose: print ' - Plotting histogram of phi* values to \n  ',pnamePS
+    if args.verbose: print(' - Plotting histogram of phi* values to \n  ',pnamePS)
 
     psval     = np.log10(fitstabPS['PHISTAR'])
     Npsval    = len(psval)
@@ -285,8 +285,8 @@ if args.phistarfile:
     dpsp     = psvalp - medianps
 
     if args.verbose:
-        print ' - The obtained value of phi* is (median +/- 68% conf):'
-        print '   log(phi*)      = ',str("%.2f" % medianps),'+',str("%.2f" % dpsp),'-',str("%.2f" % dpsm)
+        print(' - The obtained value of phi* is (median +/- 68% conf):')
+        print('   log(phi*)      = ',str("%.2f" % medianps),'+',str("%.2f" % dpsp),'-',str("%.2f" % dpsm))
 
     Nbins     = 100
     histparam = np.histogram(psval,bins=Nbins)
@@ -332,11 +332,11 @@ if args.phistarfile:
     plt.savefig(pnamePS)
     if args.show: plt.show()  # draw plot on screen
 #-------------------------------------------------------------------------------------------------------------
-for ii in xrange(Nepsfiles):
+for ii in range(Nepsfiles):
     pnameEPS = './balff_plots/'+epsfiles[ii].split('/')[-1].replace('.fits','_epsilonhist_QCf.pdf')
     if args.eps: pnameEPS = pnameEPS.replace('.pdf','.eps')
     if args.png: pnameEPS = pnameEPS.replace('.pdf','.png')
-    if args.verbose: print ' - Plotting histogram of epsilon values to \n  ',pnameEPS
+    if args.verbose: print(' - Plotting histogram of epsilon values to \n  ',pnameEPS)
 
     epsval    = logepsilonval[ii,:]
     Nepsval   = len(epsval)
@@ -349,8 +349,8 @@ for ii in xrange(Nepsfiles):
     depsp     = epsvalp - medianeps
 
     if args.verbose:
-        print ' - The obtained value of log(epsilon) is (68% conf):'
-        print '   log(epsilon)      = ',str("%.2f" % medianeps),'+',str("%.2f" % depsp),'-',str("%.2f" % depsm)
+        print(' - The obtained value of log(epsilon) is (68% conf):')
+        print('   log(epsilon)      = ',str("%.2f" % medianeps),'+',str("%.2f" % depsp),'-',str("%.2f" % depsm))
 
     Nbins     = 50
     histparam = np.histogram(epsval,bins=Nbins)
@@ -403,7 +403,7 @@ for ii in xrange(Nepsfiles):
 #-------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------
 if args.kLstarchains and args.createMultiD:
-    if args.verbose: print ' - Creating multi-D plot'
+    if args.verbose: print(' - Creating multi-D plot')
     MM = pymc.database.pickle.load(args.kLstarchains)
     kdrawn         = MM.trace('theta')[:,0]
     logLstardrawn  = MM.trace('theta')[:,1]
@@ -414,8 +414,8 @@ if args.kLstarchains and args.createMultiD:
     datfitsEPS   = pyfits.open(epsfiles[epsent])
     fitstabEPS   = datfitsEPS[1].data
     if args.verbose:
-        print '   will use epsilon data from:'
-        print epsfiles[epsent]
+        print('   will use epsilon data from:')
+        print(epsfiles[epsent])
 
     rasterval = False # draw points as bmp instead of vector based
     phidim    = np.log10(fitstabPS['PHISTAR'])
@@ -571,9 +571,9 @@ if args.kLstarchains and args.createMultiD:
     plt.yticks([])
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.savefig(multidname, dpi=300) # dpi = dot per inch for rasterized points
-    if args.verbose: print '\n - Saved ',multidname
+    if args.verbose: print('\n - Saved ',multidname)
 
 #-------------------------------------------------------------------------------------------------------------
-if args.verbose: print '\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n'
+if args.verbose: print('\n:: '+sys.argv[0]+' :: -- END OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 
