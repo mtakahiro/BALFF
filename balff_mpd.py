@@ -26,7 +26,7 @@ import balff_utilities as butil
 import sys
 import numpy as np
 import pdb
-import pyfits
+from astropy.io import fits
 import scipy
 import mpmath
 import os
@@ -135,11 +135,17 @@ class balff_mpd:
                 # loading limits from field info file for fields w/o high-z candidates
                 self.finfonames, self.finfoLJlim, self.finfodLJlim = self.loadfinfo()
 
+                finfonames = []
+                for fld in self.finfonames:
+                    finfonames.append(fld.decode())
+                self.finfonames = np.asarray(finfonames)
+
                 # getting fields not in dataarray (i.e. fields w/o high z candidates)
                 self.ufield_nocand = []
                 for nn in range(len(self.finfonames)):
                     if len(np.where(self.ufield == self.finfonames[nn])[0]) == 0:
                         self.ufield_nocand.append(self.finfonames[nn])
+
                 self.ufield_nocand  = np.asarray(self.ufield_nocand)
                 self.Nfields_nocand = len(self.ufield_nocand)
             else:
@@ -161,7 +167,12 @@ class balff_mpd:
 
             borgfield = self.finfonames.tolist()
             bf        = []
+
             for borgf in borgfield:
+                try:
+                    borgf = borgf.decode()
+                except:
+                    pass
                 if (not borgf.startswith('UDF')) & (not borgf.startswith('ERS')):
                     bf.append(borgf)
             borgfield = bf
@@ -203,7 +214,7 @@ class balff_mpd:
         Returning the data array for the individual objects from the
         provided binary fits table.
         """
-        dat = pyfits.open(fitstable)
+        dat = fits.open(fitstable)
         datTB = dat[1].data
         Nobj = len(datTB['OBJNAME'])
         try:
@@ -237,7 +248,7 @@ class balff_mpd:
         Function to load the areas of each of the fields.
         Returns the names of each field as well as the corresponding area in two separate arrays
         """
-        anames = self.fieldinfo['fieldname']
+        anames = np.asarray([fld.decode() for fld in self.fieldinfo['fieldname']])
         aareas = self.fieldinfo['fieldarea']
         return anames, aareas
 
@@ -347,7 +358,7 @@ class balff_mpd:
         gaussval = norm * exp
         return gaussval
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def setmagbiasval(self, fieldname, verbose=False):
+    def setmagbiasval(self, fieldname):
         """
         Setting the values for the magnifiaction bias error distribution
         Magbias files must be in the format:
@@ -383,7 +394,7 @@ class balff_mpd:
             self.magbiasfield_dic['meanmu3']    = self.magbiasdic[fieldname][8]
             self.magbiasfield_dic['dmu3']       = self.magbiasdic[fieldname][9]
         
-        if verbose:
+        if self.vb:
             print(' - Setting the magnification bias values for ',fieldname)
             print('  ',self.magbiasfield_dic)
 
@@ -876,7 +887,11 @@ class balff_mpd:
         table  : look-up table to use (i.e. the path/name to the *.npz file)
                  containing a dictionary with a k-L* table for each field/survey
         """
-        dict = np.load(table) # loading dictionary with look-up tables
+        dict = np.load(table) # loading dictionary with look-up tables        
+
+        # # @@@ TM;
+        # if type(field) != np.str:
+        #     field = field.decode()
 
         if field + 'lookup' not in dict:
             sys.exit('Data for ' + field + ' was not found in the look-up dictionary ' + table + ' --> ABORTING')
@@ -940,6 +955,7 @@ class balff_mpd:
             if self.vb: print(':: balff_mpd.lnpdenominator :: Changing pden = ', pden, ' to pden = 1e-128', end=' ')
             pden = 1e-128 # making sure that pden == 0 is not passed to np.log
         return np.log(pden)
+    
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def getlnprob_field_contam(self, param, highz):
         """
@@ -991,12 +1007,14 @@ class balff_mpd:
             areafactor = self.fieldmean
 
             Afield = self.aareas[self.afields == field_cand]
+
             if len(Afield) == 0: # if no area was found use Asky/Nfield (for sims)
                 if field_cand[0:5] != 'FIELD': print('NB - no area found in list for field ',field_cand)
                 Afield = self.Asky/(self.Nfields)
                 if (self.emptysim == True) and (self.datafileonly == False):
                     Afield = self.Asky/(self.Nfields+self.Nfields_nocand)
             Afrac = Afield / areafactor / self.Asky
+
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             if self.errdist == 'normal':
                 gaussnorm = dLlim[fent] * np.sqrt(2 * np.pi)
@@ -1011,16 +1029,18 @@ class balff_mpd:
             detectionprob = prob / norm
 
             if detectionprob >= 0.999:
-                print('--------------------')
-                print('Field =',field_cand)     
+                if self.vb:
+                    print('--------------------')
+                    print('Field =',field_cand)     
                          
-                if detectionprob >= 2.0: # if not just numerical errors/uncertainty to 1 break
-                    print('ERROR in getlnprob_field_contam detectionprob > 2.0 for [k,L*,dL,Llim]=[', \
-                           kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')')
-                    #pdb.set_trace()
+                    if detectionprob >= 2.0: # if not just numerical errors/uncertainty to 1 break
+                        print('ERROR in getlnprob_field_contam detectionprob > 2.0 for [k,L*,dL,Llim]=[', \
+                            kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')')
+                        #pdb.set_trace()
 
-                print('WARNING in getlnprob_field_contam detectionprob > 0.999 for [k,L*,dL,Llim]=[', \
-                       kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')')
+                    print('WARNING in getlnprob_field_contam detectionprob > 0.999 for [k,L*,dL,Llim]=[', \
+                        kval, Lstar, dLlim[fent], Llim[fent], '] (detectionprob = ', detectionprob,')')
+
                 lnp1 = lnp1 + 0 # if integral is ~1 ignore term
 
             else:
@@ -1095,24 +1115,29 @@ class balff_mpd:
                 dp_nocand = prob_nocand / norm_nocand
 
                 if dp_nocand > 0.999:
-                    print('--------------------')
-                    print('Field =',field_nocand)
+                    if self.vb:
+                        print('--------------------')
+                        print('Field =',field_nocand)
 
-                    if dp_nocand >= 2.0: # if not just numerical errors/uncertainty to 1 break
-                        print('ERROR in getlnprob_field_contam dp_nocand > 2.0 for [k,L*,dL,Llim]=[', \
-                               kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')')
-                        #pdb.set_trace()
+                        if dp_nocand >= 2.0: # if not just numerical errors/uncertainty to 1 break
+                            print('ERROR in getlnprob_field_contam dp_nocand > 2.0 for [k,L*,dL,Llim]=[', \
+                                kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')')
+                            #pdb.set_trace()
 
-                    print('WARNING in getlnprob_field_contam dp_nocand > 0.999 for [k,L*,dL,Llim]=[', \
-                           kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')')
+                        print('WARNING in getlnprob_field_contam dp_nocand > 0.999 for [k,L*,dL,Llim]=[', \
+                            kval, Lstar, dLlim_nocand, Llim_nocand, '] (dp_nocand = ', dp_nocand, ')')
                     lnp1_nocand = lnp1_nocand + 0 # if integral is ~1 ignore term
 
                 else:
+
                     ffcontam = None # reset ffcontam
+
                     if (self.ufield_nocand[ff][0:3] == 'ERS') or (self.ufield_nocand[ff][0:3] == 'UDF'):
                         ffcontam = 0.0
                     elif self.ufield_nocand[ff][0:4] == 'borg':
                         ffcontam = self.contamfrac
+                    else:
+                        print(self.ufield_nocand[ff])
 
                     lnp1_nocand = lnp1_nocand + \
                                   np.log(1.0 - Afrac * dp_nocand) * \
@@ -1128,8 +1153,8 @@ class balff_mpd:
         lnBC_contam  = self.lnBC(self.contamfrac/(1.0-self.contamfrac)*Ngaluniverse,self.contamfrac*nhighztotal)
 
         lnpprob = lnprior + lnpVnon + lnpN + lnp1 + lnp2 + lnp1_nocand + lnBC_highz + lnBC_contam
-
         return lnpprob
+ 
     #-------------------------------------------------------------------------------------------------------------
     #                                 XTRA UTILITIES (NOT USED IN lnprob CALC)
     #-------------------------------------------------------------------------------------------------------------

@@ -19,7 +19,7 @@ phistarfile=${basename}_PhiStar.fits
 epsilonstring="'${basename}_epsilon_Mminint*.fits'"
 
 # === RUN MCMC CODE ===
-./balff_run.py $dataarrayfile --verbose --contamfrac $contamfracval --selectionfct 1  --Niter $Niter --Nburn $Nburn --Nthin 1 --samprange -2.0 2.0 -2.0 2.0 3.0 30.0 --chainstart -0.98 -0.119 12.0 --errdist normal --lookuptable $lookupfile --LFredshift 7.8
+python ./balff_run.py $dataarrayfile --verbose --contamfrac $contamfracval --selectionfct 1  --Niter $Niter --Nburn $Nburn --Nthin 1 --samprange -2.0 2.0 -2.0 2.0 3.0 30.0 --chainstart -0.98 -0.119 12.0 --errdist normal --lookuptable $lookupfile --LFredshift 7.8
 
 # === ESTIMATE PHISTAR ===
 ./balff_estimatePhiStar.py $mcmcchainfile $dataarrayfile --zrange 7.5 8.5 --verbose

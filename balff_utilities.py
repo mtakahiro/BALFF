@@ -3,13 +3,17 @@ import balff_utilities as butil
 import time
 import types
 import sys
-import pyfits
+from astropy.io import fits
 import numpy as np
 from scipy.interpolate import interp1d
-import astropysics
-import astropysics.obstools
-from astropysics import coords
-from astropysics.constants import choose_cosmology
+# import astropysics
+# import astropysics.obstools
+# from astropysics import coords
+# from astropysics.constants import choose_cosmology
+import astropy
+from astropy.coordinates import SkyCoord
+from dustmaps.sfd import SFDQuery
+
 #-------------------------------------------------------------------------------------------------------------
 def getAv(RA,DEC,filter,dustmaps='/Users/kschmidt/work/dustmaps/SFD_dust_4096_%s.fits'):
     """
@@ -34,19 +38,25 @@ def getAv(RA,DEC,filter,dustmaps='/Users/kschmidt/work/dustmaps/SFD_dust_4096_%s
     else:
         Nvals = list(range(len(RA)))
 
-    if Nvals > 1:
-        gall        = []
-        galb        = []
-        for ii in Nvals: # looping over RA and Decs and converting to galactic coordiantes
-            gcoords = coords.ICRSCoordinates(RA[ii],DEC[ii]).convert(coords.GalacticCoordinates)
-            gall.append(gcoords.l.degrees)
-            galb.append(gcoords.b.degrees)
-    else:
-        gcoords = coords.ICRSCoordinates(RA,DEC).convert(coords.GalacticCoordinates)
-        gall = gcoords.l.degrees
-        galb = gcoords.b.degrees
+    c = SkyCoord(RA, DEC, frame="icrs", unit="deg") 
+    gall = c.l.degrees
+    galb = c.b.degrees
+    # if Nvals > 1:
+    #     gall        = []
+    #     galb        = []
+    #     # for ii in Nvals: # looping over RA and Decs and converting to galactic coordiantes
+    #     #     gcoords = #coords.ICRSCoordinates(RA[ii],DEC[ii]).convert(coords.GalacticCoordinates)
+    #     #     gall.append(gcoords.l.degrees)
+    #     #     galb.append(gcoords.b.degrees)
+    # else:
+    #     gcoords = coords.ICRSCoordinates(RA,DEC).convert(coords.GalacticCoordinates)
+    #     gall = gcoords.l.degrees
+    #     galb = gcoords.b.degrees
 
-    Ebv = astropysics.obstools.get_SFD_dust(gall,galb,dustmaps,interpolate=True) # redening from Schlegel maps
+    # Ebv = astropysics.obstools.get_SFD_dust(gall,galb,dustmaps,interpolate=True) # redening from Schlegel maps
+    coords = SkyCoord(l=gall, b=galb, frame="galactic")
+    sfd = SFDQuery()
+    Ebv = sfd(coords)    
 
     av_ebv = {} # ebv2Av values for HST filters; CCM reddening curve with R_V = 3.1
     av_ebv['F300X']  = 6.78362003559
@@ -258,14 +268,14 @@ def appendfitstable(tab1,tab2,newtab='appendfitstable_results.fits'):
     output = butil.appendfitstable(tab1,tab2,newtab=newtab)
 
     """
-    t1     = pyfits.open(tab1)
-    t2     = pyfits.open(tab2)
+    t1     = fits.open(tab1)
+    t2     = fits.open(tab2)
 
     nrows1 = t1[1].data.shape[0] # counting rows in t1
     nrows2 = t2[1].data.shape[0] # counting rows in t2
 
     nrows  = nrows1 + nrows2 # total number of rows in the table to be generated
-    hdu    = pyfits.new_table(t1[1].columns, nrows=nrows)
+    hdu    = fits.new_table(t1[1].columns, nrows=nrows)
 
     for name in t1[1].columns.names:
         hdu.data.field(name)[nrows1:]=t2[1].data.field(name)
