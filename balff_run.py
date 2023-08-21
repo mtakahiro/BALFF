@@ -84,10 +84,16 @@ import os
 # import pymc.plots as plot
 from pymc import HalfCauchy, Model, Normal, Uniform, sample
 import time
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from lmfit import Parameters, minimize, fit_report#, Minimizer, Model, 
 import emcee
 import zeus
+import corner
+
+from gsf.minimizer import Minimizer
+from gsf.function import savecpkl #get_leastsq, print_err, str2bool
 
 #-------------------------------------------------------------------------------------------------------------
 # new step method
@@ -238,6 +244,7 @@ thetasample = Parameters()
 thetasample.add('k', value=(thetamin[0]+thetamax[0])/2, min=thetamin[0], max=thetamax[0], vary=True)
 thetasample.add('logL', value=0, min=thetamin[1], max=thetamax[1], vary=True)
 thetasample.add('logN', value=5, min=thetamin[2], max=thetamax[2], vary=True)
+ndim = 3
 
 if args.verbose: print(' - Sample range k      : [',thetamin[0],',',thetamax[0],']')
 if args.verbose: print(' - Sample range logL*  : [',thetamin[1],',',thetamax[1],']')
@@ -287,7 +294,8 @@ if args.verbose: print(' - Defining mpd model of data  @ ',time.strftime("%a, %d
 
 #     return lnprob
 
-def mpdmodel(theta, HighZ, f_val, f_resid):
+def mpdmodel(theta, HighZ, f_val, f_resid,
+             out=None, lnpreject=-np.inf):
     """
     The (simulated) data to reproduce with the model
     Returns the log-likelihood of a 1D Schechter function with a
@@ -302,15 +310,30 @@ def mpdmodel(theta, HighZ, f_val, f_resid):
     """
     if not f_val:
         theta = theta.valuesdict()
-    # param = [theta[0],10**theta[1],10**theta[2]]
-    param = [theta['k'], 10**theta['logL'], 10**theta['logN']]
+        param = [theta['k'], 10**theta['logL'], 10**theta['logN']]
+    else:
+        param = [theta[0],10**theta[1],10**theta[2]]
 
     if args.lnptime: start = time.time()
 
     lnprob = mpdclass.getlnprob_field_contam(param, HighZ)
+
     if f_resid:
         # lnprob = -0.5 * (np.sum(resid[con_res]**2)
         return lnprob / (-0.5)
+
+    # Check range:
+    if not out==None:
+        ii = 0
+        for key in out.params:
+            if out.params[key].vary:
+                cmin = out.params[key].min
+                cmax = out.params[key].max
+                if param[ii]<cmin or param[ii]>cmax or np.isnan(param[ii]):
+                    # print('outside the range')
+                    return lnpreject
+                # theta[key].value = param[ii]
+                ii += 1
 
     if args.lnptime:
         stop  = time.time()
@@ -340,152 +363,261 @@ if args.emptysim:
 fit_name = 'nelder'
 
 f_val, f_resid = False, True
-MM = minimize(mpdmodel, thetasample,
+out = minimize(mpdmodel, thetasample,
             args=(HighZ, f_val, f_resid),#self.dict['fy'], self.dict['ey'], self.dict['wht2'], self.f_dust), 
             #   kwargs = {'HighZ':HighZ},
             method=fit_name)
 
-print(fit_report(MM))
+# @@@
+print(fit_report(out))
 
 #-------------------------------------------------------------------------------------------------------------
-# selecting MCMC step method to use
-if args.verbose: print(' - Select step method for k logL* and logN samples')
+# # selecting MCMC step method to use
+# if args.verbose: print(' - Select step method for k logL* and logN samples')
 
-pdist = 'Normal' # Default proposal distribution
-if args.pdist:
-    pdist = args.pdist
-if args.verbose: print('   (Using the proposal distribution "',pdist,'")')
+# pdist = 'Normal' # Default proposal distribution
+# if args.pdist:
+#     pdist = args.pdist
+# if args.verbose: print('   (Using the proposal distribution "',pdist,'")')
 
-if args.step == 'metropolis':
-    pdist_sd = 3.0
-    MM.use_step_method(pymc.Metropolis, thetasample, proposal_sd=pdist_sd, proposal_distribution=pdist)
-else: # use RAM as default
-    target_rate   = 0.4 # Desired acceptance rate; covariance matrix adjusted to obtain this.
-    dk    = np.abs(args.samprange[1]-args.samprange[0])
-    dlogL = np.abs(args.samprange[3]-args.samprange[2])
-    dlogN = np.abs(args.samprange[5]-args.samprange[4])
-    covar_guess = np.array([[ (dk/100.)**2, 0.0, 0.0],[ 0.0, (dlogL/100.)**2, 0.0],[ 0.0, 0.0, (dlogN/100.)**2]])
-    MM.use_step_method(RobustAdaptiveMetro,thetasample,target_rate,verbose=0,
-                       proposal_covar=covar_guess,proposal_distribution=pdist)
+# if args.step == 'metropolis':
+#     pdist_sd = 3.0
+#     MM.use_step_method(pymc.Metropolis, thetasample, proposal_sd=pdist_sd, proposal_distribution=pdist)
+# else: # use RAM as default
+#     target_rate   = 0.4 # Desired acceptance rate; covariance matrix adjusted to obtain this.
+#     dk    = np.abs(args.samprange[1]-args.samprange[0])
+#     dlogL = np.abs(args.samprange[3]-args.samprange[2])
+#     dlogN = np.abs(args.samprange[5]-args.samprange[4])
+#     covar_guess = np.array([[ (dk/100.)**2, 0.0, 0.0],[ 0.0, (dlogL/100.)**2, 0.0],[ 0.0, 0.0, (dlogN/100.)**2]])
+#     MM.use_step_method(RobustAdaptiveMetro,thetasample,target_rate,verbose=0,
+#                        proposal_covar=covar_guess,proposal_distribution=pdist)
 
-if args.verbose:
-    print(' - Chosen step method for theta',MM.step_method_dict[thetasample])
+# if args.verbose:
+#     print(' - Chosen step method for theta',MM.step_method_dict[thetasample])
 
 #-------------------------------------------------------------------------------------------------------------
-# Before we start the MCMC sampler test to make sure that the RAM step is properly initialized.
-if args.step != 'metropolis':
-    RAM = MM.step_method_dict[thetasample][0]
-    assert RAM._dim == 3
+# # Before we start the MCMC sampler test to make sure that the RAM step is properly initialized.
+# if args.step != 'metropolis':
+#     RAM = MM.step_method_dict[thetasample][0]
+#     assert RAM._dim == 3
 
 #-------------------------------------------------------------------------------------------------------------
 # DEFAULT values
 if args.verbose: print(' - MCMC sampling start @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime()))
-Niter = 10000
-Nburn = 1000
-Nthin = 10
+Niter = 10 #10000
+Nburn = int(Niter/2) # 1000
+Nthin = 2
+Nwalk = 30
 # Overwrite if any given on the commandline
 if args.Niter: Niter = args.Niter
 if args.Niter: Nburn = args.Nburn
 if args.Niter: Nthin = args.Nthin
 if args.verbose: print('   (running with Niter =',Niter,', Nburn = ',Nburn,', Nthin = ',Nthin,')')
 
-MM.db # opening data base file to write to disk
-MM.sample(iter=Niter,burn=Nburn,thin=Nthin,progress_bar=True)      # sample the model
-if args.verbose: print('\n - MCMC sampling done  @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime()))
+# MM.db # opening data base file to write to disk
+# MM.sample(iter=Niter,burn=Nburn,thin=Nthin,progress_bar=True)      # sample the model
+# if args.verbose: print('\n - MCMC sampling done  @ ',time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime()))
 
-dbstate              = MM.db.getstate()['step_methods']
+# dbstate              = MM.db.getstate()['step_methods']
 
-if args.step == 'metropolis':
-    ent = 0
-    accept = dbstate[list(dbstate.keys())[ent]]['accepted']
-    reject = dbstate[list(dbstate.keys())[ent]]['rejected']
+# if args.step == 'metropolis':
+#     ent = 0
+#     accept = dbstate[list(dbstate.keys())[ent]]['accepted']
+#     reject = dbstate[list(dbstate.keys())[ent]]['rejected']
+# else:
+#     ent = 0
+#     accept = dbstate[list(dbstate.keys())[ent]]['_accepted']
+#     reject = dbstate[list(dbstate.keys())[ent]]['_rejected']
+
+# acceptancerate_theta = accept / (reject+accept)
+
+# if args.verbose:
+#     print('      with theta = (k,L*,N) acceptance rate =',acceptancerate_theta)
+#     print('      No. of accepted steps = '+str(accept))
+#     print('      No. of rejected steps = '+str(reject))
+
+# MM.db.close()
+# if args.verbose: print(' - Saved chains to ',dbname)
+
+f_val, f_resid = True, False
+moves=[(emcee.moves.DEMove(), 0.8), (emcee.moves.DESnookerMove(), 0.2),]
+sampler = emcee.EnsembleSampler(Nwalk, ndim, mpdmodel, \
+    args=(HighZ, f_val, f_resid),\
+    moves=moves,\
+    kwargs={'out': out, 'lnpreject':-np.inf, 
+    # 'f_prior_sfh':f_prior_sfh, 'norder_sfh_prior':norder_sfh_prior, 'SNlim':self.SNlim, 'NRbb_lim':self.NRbb_lim},\
+    }
+    )
+
+amp_shuffle = 1e-2
+pos = amp_shuffle * np.random.randn(Nwalk, ndim)
+aa = 0
+for aatmp,key in enumerate(out.params.valuesdict()):
+    if out.params[key].vary:
+        pos[:,aa] += out.params[key].value
+        aa += 1
+
+sampler.run_mcmc(pos, Niter, progress=True)
+flat_samples = sampler.get_chain(discard=Nburn, thin=Nthin, flat=True)
+
+#-------------------------------------------------------------------------------------------------------------
+# Plot sampler;
+DIR_PLOT = './balff_plots/'
+if not os.path.exists(DIR_PLOT):
+    os.mkdir(DIR_PLOT)
+
+_, axes = plt.subplots(ndim, figsize=(10, 7), sharex=True)
+samples = sampler.get_chain()
+labels = []
+for key in out.params.valuesdict():
+    if out.params[key].vary:
+        labels.append(key)
+
+for i in range(ndim):
+    if ndim>1:
+        ax = axes[i]
+    else:
+        ax = axes
+    ax.plot(sampler.get_chain()[:,:,i], alpha=0.3, color='k')
+    ax.set_xlim(0, len(samples))
+    ax.yaxis.set_label_coords(-0.1, 0.5)
+    ax.set_ylabel(labels[i])
+if ndim>1:
+    axes[-1].set_xlabel("step number")
 else:
-    ent = 0
-    accept = dbstate[list(dbstate.keys())[ent]]['_accepted']
-    reject = dbstate[list(dbstate.keys())[ent]]['_rejected']
+    axes.set_xlabel("step number")
 
-acceptancerate_theta = accept / (reject+accept)
+plt.savefig('%s/chain.png'%(DIR_PLOT))
+plt.close()
+# For memory optimization;
+del samples, axes
 
-if args.verbose:
-    print('      with theta = (k,L*,N) acceptance rate =',acceptancerate_theta)
-    print('      No. of accepted steps = '+str(accept))
-    print('      No. of rejected steps = '+str(reject))
+#-------------------------------------------------------------------------------------------------------------
+#----------- Save pckl file
+#-------- store chain into a cpkl file
+burnin = int(Niter/2)
+#burnin   = 0 # Since already burnt in.
+savepath = DIR_PLOT
 
-MM.db.close()
-if args.verbose: print(' - Saved chains to ',dbname)
+# Similar for nested;
+# Dummy just to get structures;
+print('\nRunning dummy sampler. Disregard message from here;\n')
+f_val, f_resid = False, False
+mini = Minimizer(mpdmodel, thetasample, 
+        fcn_args=[HighZ, f_val, f_resid], 
+        f_disp=False, nan_policy='omit',
+        moves=moves,
+        #kwargs={'f_val': True, 'NRbb_lim':self.NRbb_lim},\
+        )
+
+res = mini.emcee(burn=0, steps=3, thin=1, nwalkers=Nwalk, 
+                params=out.params, is_weighted=True, ntemps=0, workers=0, 
+                float_behavior='posterior', progress=False)
+print('\nto here.\n')
+
+# Update;
+var_names = []#res.var_names
+params_value = {}
+ii = 0
+for key in out.params:
+    if out.params[key].vary:
+        var_names.append(key)
+        params_value[key] = np.nanmedian(flat_samples[Nburn:,ii])
+        ii += 1
+flatchain = pd.DataFrame(data=flat_samples[Nburn:,:], columns=var_names)
+
+use_pickl = True
+if use_pickl:
+    cpklname = 'chain_corner.cpkl'
+    savecpkl({'chain':flatchain,
+                    'burnin':burnin, 'nwalkers':Nwalk,'niter':Niter,'ndim':ndim},
+                    savepath+cpklname) # Already burn in
+
 #-------------------------------------------------------------------------------------------------------------
 if args.verbose: print(' - Plot logNobjuniverse, k and logLstar samples')
-plot(MM)                                         # plotting results
+# plot(MM)                                         # plotting results
 
-if not os.path.isdir('./balff_plots/'):
-    if args.verbose: print(' - Did not find "./balff_plots/" so creating it')
-    os.mkdir('./balff_plots/')
+# thetafile = './balff_plots/'+dbname.split('balff_output/')[-1].replace('.pickle','_theta.png')
+# if args.verbose: print(' - Moving theta_2.png to',thetafile)
+# out = subprocess.getoutput('mv theta_2.png '+thetafile)
 
-thetafile = './balff_plots/'+dbname.split('balff_output/')[-1].replace('.pickle','_theta.png')
-if args.verbose: print(' - Moving theta_2.png to',thetafile)
-out = subprocess.getoutput('mv theta_2.png '+thetafile)
+# if args.verbose: print('\n - Printing Summary')
+# statval = 1 # resetting stat indicator
+# ssval = MM.stats() # checking that stats can be created
 
-if args.verbose: print('\n - Printing Summary')
-statval = 1 # resetting stat indicator
-ssval = MM.stats() # checking that stats can be created
+# if (ssval['theta'] == None): statval = 0
+# if statval == 1:
+#     MM.theta.summary()
+#     if args.lookuptable:
+#         statcsv = './balff_output/'+args.lookuptable.split('/')[-1].replace('.npz','_pymcchains_stat_'+contstr+'.csv')
+#     else:
+#         statcsv = './balff_output/'+args.datafile.split('/')[-1].replace('.fits','_pymcchains_stat_'+contstr+'.csv')
 
-if (ssval['theta'] == None): statval = 0
-if statval == 1:
-    MM.theta.summary()
-    if args.lookuptable:
-        statcsv = './balff_output/'+args.lookuptable.split('/')[-1].replace('.npz','_pymcchains_stat_'+contstr+'.csv')
-    else:
-        statcsv = './balff_output/'+args.datafile.split('/')[-1].replace('.fits','_pymcchains_stat_'+contstr+'.csv')
+#     if args.emptysim:
+#         statcsv = statcsv.replace('.csv','_emptysim.csv')
 
-    if args.emptysim:
-        statcsv = statcsv.replace('.csv','_emptysim.csv')
-
-    if args.verbose: print('\n - Writing stat of chains to',statcsv)
-    MM.write_csv(statcsv, variables=["theta"])
+#     if args.verbose: print('\n - Writing stat of chains to',statcsv)
+#     MM.write_csv(statcsv, variables=["theta"])
 
 #-------------------------------------------------------------------------------------------------------------
 # quick plot of 3D sample space
-qp2 = 1
-if qp2 == 1:
-    samplespacefig = './balff_plots/'+dbname.split('balff_output/')[-1].replace('.pickle','_theta_2Dsamplespace.png')
-    db = pymc.database.pickle.load(dbname)
 
-    kdrawn         = db.trace('theta')[:,0]
-    logLstardrawn  = db.trace('theta')[:,1]
-    logNdrawn      = db.trace('theta')[:,2]
-    print('k    unique', len(np.unique(kdrawn)))
-    print('logL unique', len(np.unique(logLstardrawn)))
-    print('logN unique', len(np.unique(logNdrawn)))
+levels = [0.68, 0.95, 0.997]
+quantiles = [0.01, 0.99]
+val_truth = []
+for par in var_names:
+    val_truth.append(params_value[par])
 
-    import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(12, 12))
+fig1 = corner.corner(flatchain, labels=var_names, 
+                     label_kwargs={'fontsize':16}, quantiles=quantiles, show_titles=False, 
+                     title_kwargs={"fontsize": 14}, 
+                     truths=val_truth, plot_datapoints=False, plot_contours=True, no_fill_contours=True, 
+                     plot_density=False, levels=levels, truth_color='gray', color='#4682b4'
+                     )
 
-    plt.subplot(2, 2, 1)
-    plt.plot(kdrawn, logLstardrawn, 'ob',alpha=0.2)
-    plt.xlim(np.min(kdrawn),np.max(kdrawn))
-    plt.ylim(np.min(logLstardrawn),np.max(logLstardrawn))
-    plt.xlabel('k')
-    plt.ylabel('log10(L* / [1e44erg/s])')
-    if args.chainstart: plt.plot(chainstart[0],chainstart[1],'rs',ms=10)
+fig1.savefig(DIR_PLOT + 'corner.png')
 
-    plt.subplot(2, 2, 2)
-    plt.plot(logNdrawn, logLstardrawn, 'ob',alpha=0.2)
-    plt.xlim(np.min(logNdrawn),np.max(logNdrawn))
-    plt.ylim(np.min(logLstardrawn),np.max(logLstardrawn))
-    plt.xlabel('log10(N)')
-    plt.ylabel('log10(L* / [1e44erg/s])')
-    if args.chainstart: plt.plot(chainstart[2],chainstart[1],'rs',ms=10)
+# qp2 = 1
+# if qp2 == 1:
+#     samplespacefig = DIR_PLOT+dbname.split('balff_output/')[-1].replace('.pickle','_theta_2Dsamplespace.png')
+#     db = pymc.database.pickle.load(dbname)
 
-    plt.subplot(2, 2, 3)
-    plt.plot(kdrawn, logNdrawn, 'ob',alpha=0.2)
-    plt.xlim(np.min(kdrawn),np.max(kdrawn))
-    plt.ylim(np.min(logNdrawn),np.max(logNdrawn))
-    plt.xlabel('k')
-    plt.ylabel('log10(N)')
-    if args.chainstart: plt.plot(chainstart[0],chainstart[2],'rs',ms=10)
+#     kdrawn         = db.trace('theta')[:,0]
+#     logLstardrawn  = db.trace('theta')[:,1]
+#     logNdrawn      = db.trace('theta')[:,2]
+#     print('k    unique', len(np.unique(kdrawn)))
+#     print('logL unique', len(np.unique(logLstardrawn)))
+#     print('logN unique', len(np.unique(logNdrawn)))
 
-    plt.savefig(samplespacefig)
-    if args.verbose: print('\n - Saved ',samplespacefig)
+#     import matplotlib.pyplot as plt
+#     fig = plt.figure(figsize=(12, 12))
+
+#     plt.subplot(2, 2, 1)
+#     plt.plot(kdrawn, logLstardrawn, 'ob',alpha=0.2)
+#     plt.xlim(np.min(kdrawn),np.max(kdrawn))
+#     plt.ylim(np.min(logLstardrawn),np.max(logLstardrawn))
+#     plt.xlabel('k')
+#     plt.ylabel('log10(L* / [1e44erg/s])')
+#     if args.chainstart: plt.plot(chainstart[0],chainstart[1],'rs',ms=10)
+
+#     plt.subplot(2, 2, 2)
+#     plt.plot(logNdrawn, logLstardrawn, 'ob',alpha=0.2)
+#     plt.xlim(np.min(logNdrawn),np.max(logNdrawn))
+#     plt.ylim(np.min(logLstardrawn),np.max(logLstardrawn))
+#     plt.xlabel('log10(N)')
+#     plt.ylabel('log10(L* / [1e44erg/s])')
+#     if args.chainstart: plt.plot(chainstart[2],chainstart[1],'rs',ms=10)
+
+#     plt.subplot(2, 2, 3)
+#     plt.plot(kdrawn, logNdrawn, 'ob',alpha=0.2)
+#     plt.xlim(np.min(kdrawn),np.max(kdrawn))
+#     plt.ylim(np.min(logNdrawn),np.max(logNdrawn))
+#     plt.xlabel('k')
+#     plt.ylabel('log10(N)')
+#     if args.chainstart: plt.plot(chainstart[0],chainstart[2],'rs',ms=10)
+
+#     plt.savefig(samplespacefig)
+#     if args.verbose: print('\n - Saved ',samplespacefig)
 #-------------------------------------------------------------------------------------------------------------
 if args.verbose:
     print(' ')

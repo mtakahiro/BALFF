@@ -193,14 +193,17 @@ def interpn(*args, **kw):
     if kw:
         raise ValueError("Unknown arguments: " % list(kw.keys()))
     nd = (len(args)-1)//2
+
+    # @@@ The following is computationally heavy;
     if len(args) != 2*nd+1:
         raise ValueError("Wrong number of arguments")
     q = args[:nd]
     qi = args[nd+1:]
-    a = args[nd]
+    a = args[nd] # This is the lookup table;
     for j in range(nd):
         a = interp1d(q[j], a, axis=j, kind=method)(qi[j])
     return a
+
 #-------------------------------------------------------------------------------------------------------------
 def simulate_schechter_distribution(alpha, L_star, L_min, N,trunmax=10):
     """

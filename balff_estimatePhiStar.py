@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 #+
 #----------------------------
 #   NAME
@@ -43,8 +42,11 @@ import pymc
 import balff_mpd as mpd
 import scipy.integrate
 import scipy.stats
-from cosmocalc import cosmocalc
-import pyfits
+# from cosmocalc import cosmocalc
+from astropy.cosmology import Planck13
+from astropy.cosmology import WMAP9 as cosmo
+from astropy.io import fits
+
 #-------------------------------------------------------------------------------------------------------------
 # Managing arguments with argparse (see http://docs.python.org/howto/argparse.html)
 parser = argparse.ArgumentParser()
@@ -90,8 +92,10 @@ def volume(zmin,zmax,cos=[0.3,70]):
     Calculating dv/dz for a given redshift range and cosmology
     '''
     dz    = zmax-zmin
-    vmin  = cosmocalc(zmin,H0=cos[1],WM=cos[0])['VCM_Gpc3']*1.0e9 # volume in Mpc^3
-    vmax  = cosmocalc(zmax,H0=cos[1],WM=cos[0])['VCM_Gpc3']*1.0e9 # volume in Mpc^3
+    # vmin  = cosmocalc(zmin,H0=cos[1],WM=cos[0])['VCM_Gpc3']*1.0e9 # volume in Mpc^3
+    # vmax  = cosmocalc(zmax,H0=cos[1],WM=cos[0])['VCM_Gpc3']*1.0e9 # volume in Mpc^3
+    vmin = cosmo.comoving_volume(zmin).value
+    vmax = cosmo.comoving_volume(zmax).value
     dv    = vmax-vmin
     return dv/dz,vmax
 #-------------------------------------------------------------------------------------------------------------
@@ -114,10 +118,16 @@ Vol       = dVdz * Dz
 #-------------------------------------------------------------------------------------------------------------
 # Loading balff MCMC info
 if args.verbose: print(' - Loading MCMC chains and stats outputted by balff_run.py')
-mcmcdb    = pymc.database.pickle.load(args.mcmcpickle)
-kvaldraw  = mcmcdb.trace('theta')[:,0]
-logLstar  = mcmcdb.trace('theta')[:,1]
-logNdraw  = mcmcdb.trace('theta')[:,2]
+# mcmcdb    = pymc.database.pickle.load(args.mcmcpickle)
+# kvaldraw  = mcmcdb.trace('theta')[:,0]
+# logLstar  = mcmcdb.trace('theta')[:,1]
+# logNdraw  = mcmcdb.trace('theta')[:,2]
+from gsf.function import loadcpkl
+data = loadcpkl(args.mcmcpickle)['chain']
+
+kvaldraw  = data['k']
+logLstar  = data['logL']
+logNdraw  = data['logN']
 
 Lstardraw = 10**logLstar
 Nmcmc     = len(kvaldraw)
@@ -195,21 +205,24 @@ for ii in range(Nliterature):
 fitsname  = args.mcmcpickle.replace('.pickle','_PhiStar.fits')
 if args.verbose: print('\n - Writing k, L* and phi* values to fits table:\n   '+fitsname)
 
-col1  = pyfits.Column(name='K' , format='D', array=kvaldraw)
-col2  = pyfits.Column(name='LSTAR', format='D', array=Lstardraw)
-col3  = pyfits.Column(name='PHISTAR', format='D', array=phistarest)
-cols  = pyfits.ColDefs([col1, col2, col3])
-tbhdu = pyfits.new_table(cols)          # creating table header
+col1  = fits.Column(name='K' , format='D', array=kvaldraw)
+col2  = fits.Column(name='LSTAR', format='D', array=Lstardraw)
+col3  = fits.Column(name='PHISTAR', format='D', array=phistarest)
+cols  = fits.ColDefs([col1, col2, col3])
+tbhdu = fits.Header()
+# fits.new_table(cols)          # creating table header
+dathdu = fits.BinTableHDU.from_columns(cols)
 
 # writing hdrkeys:   '---KEY--',                  '----------------MAX LENGTH COMMENT-------------'
-tbhdu.header.append(('NFIELD  ' ,Nfield           ,'Number of fields used in estimate'),end=True)
-tbhdu.header.append(('NMCMC   ' ,Nmcmc            ,'Number of MCMC draws'),end=True)
+tbhdu['NFIELD']  = Nfield #          ,'Number of fields used in estimate'),end=True)
+tbhdu['NMCMC']  = Nmcmc #           ,'Number of MCMC draws'),end=True)
 
-hdu      = pyfits.PrimaryHDU()             # creating primary (minimal) header
-thdulist = pyfits.HDUList([hdu, tbhdu])    # combine primary and table header to hdulist
-thdulist.writeto(fitsname,clobber=True)  # write fits file (clobber=True overwrites excisting file)  
+hdu      = fits.PrimaryHDU(header=tbhdu)             # creating primary (minimal) header
+thdulist = fits.HDUList([hdu, dathdu])    # combine primary and table header to hdulist
+thdulist.writeto(fitsname,overwrite=True)  # write fits file (clobber=True overwrites excisting file)  
+
 #-------------------------------------------------------------------------------------------------------------
-datfitsPS = pyfits.open(fitsname)
+datfitsPS = fits.open(fitsname)
 fitstabPS = datfitsPS[1].data
 psval     = np.log10(fitstabPS['PHISTAR'])
 medianps  = np.median(psval)

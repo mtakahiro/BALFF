@@ -208,6 +208,22 @@ class balff_mpd:
                 for key in list(self.magbiasdic.keys()):
                     self.magbiasdic[key] = [1.0,1.0,1.0,0.0]
 
+        # Initialize where func;
+        self.init_fields()
+
+        # Lookup table;
+        self.loogup_dict = None
+
+
+    def init_fields(self):
+        '''
+        '''
+        objents = []
+        for ff in range(self.Nfields):
+            objent = np.where(self.fields == self.ufield[ff])[0]
+            objents.append(objent)
+        self.objents = objents
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def readdata(self, fitstable):
         """
@@ -887,25 +903,28 @@ class balff_mpd:
         table  : look-up table to use (i.e. the path/name to the *.npz file)
                  containing a dictionary with a k-L* table for each field/survey
         """
-        dict = np.load(table) # loading dictionary with look-up tables        
+        if self.loogup_dict == None:
+            self.loogup_dict = np.load(table) # loading dictionary with look-up tables        
 
-        # # @@@ TM;
-        # if type(field) != np.str:
-        #     field = field.decode()
-
-        if field + 'lookup' not in dict:
+        if field + 'lookup' not in self.loogup_dict:
             sys.exit('Data for ' + field + ' was not found in the look-up dictionary ' + table + ' --> ABORTING')
-        lookup = dict[field + 'lookup']  # get look-up table. np.array with shape (Nk,NLstar)
-        kdim = dict['kdim']
-        Lstardim = dict['Lstardim']
+
+        lookup = self.loogup_dict[field + 'lookup']  # get look-up table. np.array with shape (Nk,NLstar)
+        kdim = self.loogup_dict['kdim']
+        Lstardim = self.loogup_dict['Lstardim']
 
         kadd = np.sort(np.append(kdim, kval))
         Lstaradd = np.sort(np.append(Lstardim, Lstar))
+        
         newsurf = butil.interpn(kdim, Lstardim, lookup, kadd, Lstaradd)
+
         kent = np.where(kadd == kval)[0][0]
         Lstarent = np.where(Lstaradd == Lstar)[0][0]
         lookupval = newsurf[kent, Lstarent] # the desired value of the interpolated surface
-        dict.close()
+
+        # @@@
+        # dict.close()
+
         return lookupval
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -990,7 +1009,9 @@ class balff_mpd:
         lnp1 = 0.0
         lnp2 = 0.0
         for ff in range(self.Nfields):
-            objent = np.where(self.fields == self.ufield[ff])[0]
+
+            # objent = np.where(self.fields == self.ufield[ff])[0]
+            objent = self.objents[ff]
             
             field_cand = self.ufield[ff]
 
@@ -999,11 +1020,11 @@ class balff_mpd:
             this_highz = highz[objent]
             nhighz = np.sum(this_highz)
 
-
             if self.errdist == 'magbias':
                 self.setmagbiasval(field_cand)
             else:
                 self.fieldmean = 1.0
+
             areafactor = self.fieldmean
 
             Afield = self.aareas[self.afields == field_cand]
@@ -1074,10 +1095,13 @@ class balff_mpd:
 
                     lnp2 = lnp2 + lnp_obj
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
         # ------------- terms for fields w/o highz candidates -------------
         lnp1_nocand = 0.0
         if self.datafileonly == False:
+            
             for ff in range(self.Nfields_nocand):
+
                 field_nocand = self.ufield_nocand[ff]
                 if field_nocand == 'borg_1437+5043':
                     #print 'skipping field: borg_1437+5043'
@@ -1087,6 +1111,7 @@ class balff_mpd:
                     self.setmagbiasval(self.ufield_nocand[ff])
                 else:
                     self.fieldmean = 1.0
+
                 areafactor = self.fieldmean
 
                 if self.emptysim == True: # for simulated empty fields use values for FIELD1 in data table
@@ -1142,6 +1167,8 @@ class balff_mpd:
                     lnp1_nocand = lnp1_nocand + \
                                   np.log(1.0 - Afrac * dp_nocand) * \
                                   (Ngaluniverse - 0.0)/(1.0-ffcontam)
+        
+        print('Done')
 
         # ------------- normalizing terms -------------
         lnprior = np.log(1.0)   # constant log-priors => can be set to 1
