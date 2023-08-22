@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 #+
 #----------------------------
 #   NAME
@@ -38,7 +37,8 @@ import pymc
 import balff_mpd as mpd
 import scipy.integrate
 import time
-import pyfits
+from astropy.io import fits
+
 #-------------------------------------------------------------------------------------------------------------
 # Managing arguments with argparse (see http://docs.python.org/howto/argparse.html)
 parser = argparse.ArgumentParser()
@@ -55,11 +55,12 @@ if args.verbose: print('\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 # Loading MCMC info
 if args.verbose: print(' - Loading MCMC chains and stats')
-mcmcdb    = pymc.database.pickle.load(args.mcmcpickle)
-kvaldraw  = mcmcdb.trace('theta')[:,0]
-logLstar  = mcmcdb.trace('theta')[:,1]
-logNdraw  = mcmcdb.trace('theta')[:,2]
-#import mpd.modifytrace as mt; kvaldraw, logLstar, logNdraw = mt.modifytrace(kvaldraw,logLstar,logNdraw)
+from gsf.function import loadcpkl
+data = loadcpkl(args.mcmcpickle)['chain']
+
+kvaldraw  = data['k']
+logLstar  = data['logL']
+logNdraw  = data['logN']
 
 Lstardraw = 10**logLstar
 Nmcmc     = len(kvaldraw)
@@ -163,22 +164,24 @@ for mm in range(Nmcmc):
 
 #-------------------------------------------------------------------------------------------------------------
 # Saving epsilon values
-fitsname = args.mcmcpickle.replace('.pickle','_epsilon.fits')
+fitsname = args.mcmcpickle.replace('.cpkl','_epsilon.fits')
 if args.Mminintval: fitsname = fitsname.replace('.fits','_Mminint'+str(args.Mminintval).replace('.','p')+'.fits')
 if args.verbose: print('\nWriting k, L* and log10(epsilon/phi*) values to fits table :',fitsname)
     
-col1  = pyfits.Column(name='K' , format='D', array=kvaldraw)
-col2  = pyfits.Column(name='LSTAR', format='D', array=Lstardraw)
-col3  = pyfits.Column(name='EPSILONPHISTAR', format='D', array=epsilon)
-cols  = pyfits.ColDefs([col1, col2, col3])
-tbhdu = pyfits.new_table(cols)          # creating table header
+col1  = fits.Column(name='K' , format='D', array=kvaldraw)
+col2  = fits.Column(name='LSTAR', format='D', array=Lstardraw)
+col3  = fits.Column(name='EPSILONPHISTAR', format='D', array=epsilon)
+cols  = fits.ColDefs([col1, col2, col3])
+tbhdu = fits.Header()
+# tbhdu = fits.new_table(cols)          # creating table header
+dathdu = fits.BinTableHDU.from_columns(cols)
 
 # writing hdrkeys:   '---KEY--',                  '----------------MAX LENGTH COMMENT-------------'
-tbhdu.header.append(('NMCMC   ' ,Nmcmc            ,'Number of MCMC draws'),end=True)
+tbhdu['NMCMC'] = Nmcmc #           ,'Number of MCMC draws'),end=True)
 
-hdu      = pyfits.PrimaryHDU()             # creating primary (minimal) header
-thdulist = pyfits.HDUList([hdu, tbhdu])    # combine primary and table header to hdulist
-thdulist.writeto(fitsname,clobber=True)    # write fits file (clobber=True overwrites excisting file)
+hdu      = fits.PrimaryHDU(header=tbhdu)             # creating primary (minimal) header
+thdulist = fits.HDUList([hdu, dathdu])    # combine primary and table header to hdulist
+thdulist.writeto(fitsname,overwrite=True)    # write fits file (clobber=True overwrites excisting file)
 #-------------------------------------------------------------------------------------------------------------
 print('\nThe mean of the obtained epsilon/phi* values is :',np.mean(epsilon))
 #-------------------------------------------------------------------------------------------------------------

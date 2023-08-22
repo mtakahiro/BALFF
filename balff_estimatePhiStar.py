@@ -202,7 +202,7 @@ for ii in range(Nliterature):
 
 #-------------------------------------------------------------------------------------------------------------
 # Saving phi* values
-fitsname  = args.mcmcpickle.replace('.pickle','_PhiStar.fits')
+fitsname  = args.mcmcpickle.replace('.cpkl','_PhiStar.fits')
 if args.verbose: print('\n - Writing k, L* and phi* values to fits table:\n   '+fitsname)
 
 col1  = fits.Column(name='K' , format='D', array=kvaldraw)
