@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 #+
 #----------------------------
 #   NAME
@@ -45,11 +44,11 @@
 import argparse
 import sys
 import numpy as np
-import pyfits
 import glob
-import pymc
-import balff_utilities as butil
+# import pymc
+from astropy.io import fits
 import matplotlib.pyplot as plt
+import balff_utilities as butil
 #-------------------------------------------------------------------------------------------------------------
 # Managing arguments with argparse (see http://docs.python.org/howto/argparse.html)
 parser = argparse.ArgumentParser()
@@ -69,7 +68,7 @@ args = parser.parse_args()
 if args.verbose: print('\n:: '+sys.argv[0]+' :: -- START OF PROGRAM -- \n')
 #-------------------------------------------------------------------------------------------------------------
 # load phistar data
-datfitsPS    = pyfits.open(args.phistarfile)
+datfitsPS    = fits.open(args.phistarfile)
 fitstabPS    = datfitsPS[1].data
 NPS = len(fitstabPS)
 #-------------------------------------------------------------------------------------------------------------
@@ -95,7 +94,7 @@ logksival = np.zeros([Nepsfiles,Nmcmc]) # array to contain draws of ksi
 logepsilonval= np.zeros([Nepsfiles,Nmcmc])
 
 for ii in range(Nepsfiles):
-    datfitsEPS   = pyfits.open(epsfiles[ii])
+    datfitsEPS   = fits.open(epsfiles[ii])
     fitstabEPS   = datfitsEPS[1].data
     NEPS         = len(fitstabEPS)
     if NPS != NEPS:
@@ -122,7 +121,7 @@ epsilonB12  = np.array([25.50,25.58,25.65,25.23,25.45,25.17,25.18,25.46,25.46]) 
 #                                       PLOTTING
 #-------------------------------------------------------------------------------------------------------------
 Fsize = 18
-plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
+# plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
 plt.rc('font', family='serif',size=Fsize)           # setting text font
 plt.rc('xtick', labelsize=Fsize) 
 plt.rc('ytick', labelsize=Fsize) 
@@ -135,6 +134,7 @@ if args.verbose: print(' - Plotting QC/f vs Mlim to \n  ',pname)
 logQCfvec      = np.zeros(Nepsfiles)
 logQCfvec_errp = np.zeros(Nepsfiles)
 logQCfvec_errm = np.zeros(Nepsfiles)
+
 for ii in range(Nepsfiles):
     logQCfall     = logepsilonval[ii,:]+logksival[ii,:]-50.31
     logQCfvec[ii] = np.median(logQCfall )
@@ -153,16 +153,16 @@ plt.clf()
 width = 2
 
 plt.fill_between(Mlim,logQCfvec+logQCfvec_errp,logQCfvec-logQCfvec_errm,alpha=0.30,color='k')
-plt.hist(np.linspace(1000,1010,10),bins=10,color='k',alpha=0.30,label='68.2\% confidence') # dummy label
-plt.plot(Mlim,logQCfvec,'k-',label=r'median log$_{10}$( QC/f )', lw=width)
+plt.hist(np.linspace(1000,1010,10),bins=10,color='k',alpha=0.30,label='68.2\%\ confidence') # dummy label
+plt.plot(Mlim,logQCfvec,'k-',label='median log$_{10}$( QC/f )', lw=width)
 plt.plot([-17.7,-17.7],[ymin,ymax+0.05],'-k',label='HUDF limit (Bouwens et al. 2011)')
 
 plt.plot(Mlim,np.ones(Nepsfiles)*np.log10(1.0*3/0.2),':k',label='Q=1, C=3, f=0.2')
 plt.plot(Mlim,np.ones(Nepsfiles)*np.log10(0.5*3/0.2),'--k',label='Q=0.5, C=3, f=0.2')
 plt.plot(Mlim,np.ones(Nepsfiles)*np.log10(0.2*3/0.2),'-.k',label='Q=0.2, C=3, f=0.2')
 
-plt.xlabel(r'M$_{lim}$')
-plt.ylabel(r'log$_{10}$( QC/f )')
+plt.xlabel('M$_{lim}$')
+plt.ylabel('log$_{10}$( QC/f )')
 
 plt.ylim(ymin,1.2)
 plt.xlim(np.max(Mlim),np.min(Mlim))
@@ -304,7 +304,7 @@ if args.phistarfile:
     plt.clf()
     width = 2
 
-    plt.hist(psval,bins=Nbins,color="k",histtype="step",lw=width,normed=True)
+    plt.hist(psval,bins=Nbins,color="k",histtype="step",lw=width,density=True)
     xmin,xmax,ymin,ymax = plt.axis()
 
     plt.fill_between(err68,[ymin,ymin],[ymax,ymax],alpha=0.10,color='k')
@@ -368,7 +368,7 @@ for ii in range(Nepsfiles):
     plt.clf()
     width = 2
 
-    histval = plt.hist(epsval,bins=Nbins,color="k",histtype="step",lw=width,normed=True)
+    histval = plt.hist(epsval,bins=Nbins,color="k",histtype="step",lw=width,density=True)
     xmin,xmax,ymin,ymax = plt.axis()
     ymin = 0.0
     ymax = np.max(histval[0])*1.05
@@ -404,14 +404,21 @@ for ii in range(Nepsfiles):
 #-------------------------------------------------------------------------------------------------------------
 if args.kLstarchains and args.createMultiD:
     if args.verbose: print(' - Creating multi-D plot')
-    MM = pymc.database.pickle.load(args.kLstarchains)
-    kdrawn         = MM.trace('theta')[:,0]
-    logLstardrawn  = MM.trace('theta')[:,1]
-    logNdraw       = MM.trace('theta')[:,2]
+    # MM = pymc.database.pickle.load(args.kLstarchains)
+    # kdrawn         = MM.trace('theta')[:,0]
+    # logLstardrawn  = MM.trace('theta')[:,1]
+    # logNdraw       = MM.trace('theta')[:,2]
+
+    from gsf.function import loadcpkl
+    data = loadcpkl(args.kLstarchains)['chain']
+    kdrawn  = data['k']
+    logLstardrawn  = data['logL']
+    logNdraw  = data['logN']
+
     #import modifytrace as mt; kdrawn, logLstardrawn, logNdraw = mt.modifytrace(kdrawn,logLstardrawn,logNdraw)
 
     epsent       = -2
-    datfitsEPS   = pyfits.open(epsfiles[epsent])
+    datfitsEPS   = fits.open(epsfiles[epsent])
     fitstabEPS   = datfitsEPS[1].data
     if args.verbose:
         print('   will use epsilon data from:')
@@ -424,13 +431,13 @@ if args.kLstarchains and args.createMultiD:
     mstardim  = butil.L2Mabs(10**logLstardrawn,MUVsun=5.48)
 
     import matplotlib.pyplot as plt
-    multidname = './balff_plots/'+args.kLstarchains.split('/')[-1].replace('.pickle','_multiDplot.pdf')
+    multidname = './balff_plots/'+args.kLstarchains.split('/')[-1].replace('.cpkl','_multiDplot.pdf')
     if args.eps: multidname = multidname.replace('.pdf','.eps')
     if args.png: multidname = multidname.replace('.pdf','.png')
 
     fig        = plt.figure(figsize=(13,10))
     Fsize      = 10
-    plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
+    # plt.rc('text', usetex=True)                         # enabling LaTex rendering of text
     plt.rc('font', family='serif',size=Fsize)           # setting text font
     plt.rc('xtick', labelsize=Fsize)
     plt.rc('ytick', labelsize=Fsize)
@@ -449,7 +456,7 @@ if args.kLstarchains and args.createMultiD:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 4 , 1) # Mstar hist
     histval = mstardim
-    hist    = plt.hist(histval, bins=nbins,color='k',normed=True,histtype="step")
+    hist    = plt.hist(histval, bins=nbins,color='k',density=True,histtype="step")
     plt.xlim(np.min(histval),np.max(histval))
     plt.ylim(0,np.max(hist[0])*1.1)
     #plt.xlabel(r'$M^*$')
@@ -476,7 +483,7 @@ if args.kLstarchains and args.createMultiD:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 4 , 6) # eps hist
     histval = epsdim
-    hist    = plt.hist(histval, bins=nbins,color='k',normed=True,histtype="step")
+    hist    = plt.hist(histval, bins=nbins,color='k',density=True,histtype="step")
     plt.xlim(np.min(histval),np.max(histval))
     plt.ylim(0,np.max(hist[0])*1.1)
     #plt.xlabel(r'$M^*$')
@@ -516,7 +523,7 @@ if args.kLstarchains and args.createMultiD:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 4 , 11)# phi* hist
     histval = phidim
-    hist    = plt.hist(histval, bins=nbins,color='k',normed=True,histtype="step")
+    hist    = plt.hist(histval, bins=nbins,color='k',density=True,histtype="step")
     plt.xlim(np.min(histval),np.max(histval))
     plt.ylim(0,np.max(hist[0])*1.1)
     #plt.xlabel(r'$M^*$')
@@ -563,7 +570,7 @@ if args.kLstarchains and args.createMultiD:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     plt.subplot(4, 4 , 16)# alpha hist
     histval = alphdim
-    hist    = plt.hist(histval, bins=nbins,color='k',normed=True,histtype="step")
+    hist    = plt.hist(histval, bins=nbins,color='k',density=True,histtype="step")
     plt.xlim(np.min(histval),np.max(histval))
     plt.ylim(0,np.max(hist[0])*1.1)
     plt.xlabel(r'$\alpha$')

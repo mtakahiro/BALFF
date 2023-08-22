@@ -93,6 +93,8 @@ def fast_kde(x, y, gridsize=(200, 200), extents=None, nocorrelation=False, weigh
     # First, determine how big the kernel needs to be
     std_devs = np.sqrt(np.diag(cov))  # KBS swapped order of sqrt and diag to accept negative off-diagonal elements
     kern_nx, kern_ny = np.round(scotts_factor * 2 * np.pi * std_devs)
+    kern_nx = int(kern_nx)
+    kern_ny = int(kern_ny)
 
     # Determine the bandwidth to use for the gaussian kernel
     inv_cov = np.linalg.inv(cov * scotts_factor**2)
